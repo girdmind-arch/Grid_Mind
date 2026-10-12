@@ -1,7 +1,7 @@
-"""The Forecaster: the next 12 hours of demand, solar and tariff, plus notable events.
+"""The Forecaster: the next 12 hours of demand, solar, temperature and tariff, plus events.
 
-Demand comes from the campus load model under the current conditions and the
-agents' current plan; solar from the clear-sky profile scaled by cloud cover.
+Solar and temperature come from the live weather forecast (Open-Meteo); demand
+comes from the campus load model under that weather and the agents' plan.
 """
 
 from __future__ import annotations
@@ -9,72 +9,90 @@ from __future__ import annotations
 import math
 
 from . import campus as c
-from .grid import LiveGrid, at_hour, conditions_for, iso
+from .grid import LiveGrid, iso
 from .simulator import zone_loads
 
 
 def _hhmm(hour: float) -> str:
-    h = int(hour) % 24
-    m = int(round((hour - int(hour)) * 60))
-    if m == 60:
-        h, m = (h + 1) % 24, 0
-    return f"{h:02d}:{m:02d}"
+    total = int(round(hour * 60)) % (24 * 60)
+    return f"{total // 60:02d}:{total % 60:02d}"
 
 
 def build_forecast(grid: LiveGrid) -> dict:
     now = grid.hour()
-    cond = conditions_for(grid.fault)
+    cond = grid.conditions()
     pol = grid.active_policy()
     start = math.floor(now)
+
+    def solar_at(h: float) -> float:
+        return cond.solar_and_temp(h)[0] * cond.solar_factor
 
     points = []
     for i in range(12):
         h = start + i
-        demand = sum(z.kw for z in zone_loads(h, cond, pol))
         points.append({
-            "time": iso(at_hour(h)),
-            "demandKw": round(demand),
-            "solarKw": round(c.clear_sky_solar_kw(h) * cond.solar_factor),
-            "tariffInr": c.tariff_at(h).rate,
+            "time": iso(grid.at(h)),
+            "demandKw": round(sum(z.kw for z in zone_loads(h, cond, pol))),
+            "solarKw": round(solar_at(h)),
+            "tariffInr": cond.rate(h),
+            "temperatureC": round(cond.solar_and_temp(h)[1], 1),
         })
 
     events = []
-    # Next tariff change.
+    # Next two tariff changes.
     for i in range(1, 25):
         h = start + i
-        if c.tariff_at(h).slab != c.tariff_at(h - 1).slab:
+        if c.tariff_at(h).slab != c.tariff_at(h - 1).slab and h > now:
             t = c.tariff_at(h)
-            title = "Evening peak begins" if t.slab == "peak" else "Off-peak tariff" if t.slab == "off-peak" else "Normal tariff"
-            detail = (f"Tariff rises to ₹{t.rate:.2f}/kWh until 22:00." if t.slab == "peak"
-                      else f"Recharge battery at ₹{t.rate:.2f}/kWh overnight." if t.slab == "off-peak"
-                      else f"Tariff ₹{t.rate:.2f}/kWh.")
-            if h > now:
-                events.append({"id": f"ev-tariff-{h}", "time": iso(at_hour(h)), "title": title, "detail": detail, "kind": "tariff"})
-            if len([e for e in events if e["kind"] == "tariff"]) >= 2:
+            rate = cond.rate(h)
+            title = {"peak": "Evening peak begins", "off-peak": "Off-peak tariff", "normal": "Normal tariff"}[t.slab]
+            detail = {
+                "peak": f"Tariff rises to ₹{rate:.2f}/kWh until 22:00.",
+                "off-peak": f"Recharge battery at ₹{rate:.2f}/kWh overnight.",
+                "normal": f"Tariff ₹{rate:.2f}/kWh until 18:00.",
+            }[t.slab]
+            events.append({"id": f"ev-tariff-{h}", "time": iso(grid.at(h)), "title": title, "detail": detail, "kind": "tariff"})
+            if sum(e["kind"] == "tariff" for e in events) >= 2:
                 break
 
-    # Solar drops below 100 kW (searched in 10-minute steps).
-    solar = lambda h: c.clear_sky_solar_kw(h) * cond.solar_factor
-    if solar(now) >= 100:
-        t = now
-        while t < now + 12:
-            if solar(t) < 100:
-                events.append({"id": "ev-solar", "time": iso(at_hour(t)), "title": "Solar output drops below 100 kW",
-                               "detail": "Battery and grid take over as the sun sets.", "kind": "solar"})
-                break
-            t += 1 / 6
+    # Sunset / sunrise for solar, searched in 10-minute steps.
+    t, step = now, 1 / 6
+    producing = solar_at(now) >= 100
+    while t < now + 12:
+        if producing and solar_at(t) < 100:
+            events.append({"id": "ev-solar", "time": iso(grid.at(t)), "title": "Solar output drops below 100 kW",
+                           "detail": "Battery and grid take over as the sun sets.", "kind": "solar"})
+            break
+        if not producing and solar_at(t) >= 100:
+            events.append({"id": "ev-solar", "time": iso(grid.at(t)), "title": "Solar passes 100 kW",
+                           "detail": "Morning sun starts covering part of the campus load.", "kind": "solar"})
+            break
+        t += step
 
-    # Demand peak within the window.
+    # Demand peak in the window.
     peak = max(points, key=lambda p: p["demandKw"])
-    if peak["demandKw"] > points[0]["demandKw"]:
+    if peak["demandKw"] > points[0]["demandKw"] + 20:
         events.append({"id": "ev-peak", "time": peak["time"], "title": "Campus demand peaks",
-                       "detail": f"Forecast {peak['demandKw']:,} kW (±4%) as hostels fill up.", "kind": "peak"})
+                       "detail": f"Forecast {peak['demandKw']:,} kW (±4%).", "kind": "peak"})
+
+    # Weather worth knowing about: the hottest hour and heavy cloud during daylight.
+    hottest = max(points, key=lambda p: p["temperatureC"])
+    if hottest["temperatureC"] >= 38:
+        events.append({"id": "ev-heat", "time": hottest["time"], "title": f"Hottest hour: {hottest['temperatureC']:.0f}°C",
+                       "detail": "Cooling demand is highest; hostels may be pre-cooled.", "kind": "weather"})
+    for i in range(12):
+        h = start + i
+        _, _, cloud, live = grid.weather.at(grid.at(h))
+        if live and cloud >= 70 and c.clear_sky_solar_kw(h) > 150:
+            events.append({"id": "ev-cloud", "time": iso(grid.at(h)), "title": f"Heavy cloud ({round(cloud)}%)",
+                           "detail": "Solar output will be well below a clear day.", "kind": "weather"})
+            break
 
     if grid.fault and grid.fault.type in ("cloud_cover", "heatwave"):
         end = grid.fault.started_hour + grid.fault.duration_min / 60
         label = "Clouds expected to clear" if grid.fault.type == "cloud_cover" else "Heat expected to ease"
-        events.append({"id": "ev-weather", "time": iso(at_hour(end)), "title": label,
+        events.append({"id": "ev-scenario", "time": iso(grid.at(end)), "title": label,
                        "detail": f"About {_hhmm(end)}, based on the scenario duration.", "kind": "weather"})
 
     events.sort(key=lambda e: e["time"])
-    return {"generatedAt": iso(at_hour(now)), "horizonHours": 12, "points": points, "events": events}
+    return {"generatedAt": iso(grid.at(now)), "horizonHours": 12, "points": points, "events": events}

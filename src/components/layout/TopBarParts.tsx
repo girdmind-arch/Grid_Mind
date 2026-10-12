@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { Bell, Search } from "lucide-react";
+import { Bell, CloudSun, Search } from "lucide-react";
 import { useSimClock } from "@/hooks/useSimClock";
+import { useAppStore } from "@/store/appStore";
 import { formatDate, formatTime } from "@/utils/format";
 import { cn } from "@/utils/cn";
 import { Button, Modal } from "@/components/ui";
@@ -11,13 +12,43 @@ import { NAV_ITEMS } from "./nav";
 // ---------- Simulated clock ----------
 export function SimClock({ className }: { className?: string }) {
   const now = useSimClock();
+  const env = useAppStore((s) => s.environment);
+  const label = !env ? "Sim time · IST" : env.clock === "live" ? "Live · IST" : `Demo evening · ${env.speed}×`;
+  const title = !env
+    ? "Simulated campus time (IST)"
+    : env.clock === "live"
+      ? "Real Indian time; the campus runs live"
+      : `Demo clock running ${env.speed}× faster than real time`;
   return (
-    <div className={cn("flex flex-col leading-tight", className)} title="Simulated campus time (IST)">
-      <span className="micro-label text-[11px] text-fg-subtle">Sim time · IST</span>
+    <div className={cn("flex flex-col leading-tight", className)} title={title}>
+      <span className="micro-label flex items-center gap-1.5 text-[11px] text-fg-subtle">
+        {env && <span aria-hidden className="size-1.5 animate-pulse-soft rounded-full bg-success" />}
+        {label}
+      </span>
       <span className="font-mono text-sm font-semibold tabular text-fg">
         <time dateTime={now.toISOString()}>
           {formatTime(now)} <span className="font-sans font-medium text-fg-muted">· {formatDate(now)}</span>
         </time>
+      </span>
+    </div>
+  );
+}
+
+// ---------- Live weather from the backend ----------
+export function LiveWeather({ className }: { className?: string }) {
+  const env = useAppStore((s) => s.environment);
+  if (!env) return null;
+  const live = env.weatherSource === "open-meteo";
+  return (
+    <div
+      className={cn("flex flex-col leading-tight", className)}
+      title={live ? `Live weather from Open-Meteo for ${env.location}` : "Weather service unreachable: using a typical-day profile"}
+    >
+      <span className="micro-label text-[11px] text-fg-subtle">{live ? `Weather · ${env.location}` : "Weather · typical day"}</span>
+      <span className="flex items-center gap-1.5 text-sm font-semibold text-fg">
+        <CloudSun aria-hidden strokeWidth={1.75} className="size-4 text-solar" />
+        <span className="font-mono tabular">{Math.round(env.temperatureC)}°C</span>
+        <span className="font-medium text-fg-muted">· {env.cloudPct}% cloud</span>
       </span>
     </div>
   );

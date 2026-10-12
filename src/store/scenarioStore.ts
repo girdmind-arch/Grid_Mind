@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { FaultRequest, FaultType } from "@/types/grid";
 import type { ApprovalResponse, Decision, Incident, Lesson, ScenarioOutcome } from "@/types/agents";
-import { clearScenario, getThoughtTrace, injectFault, respondToApproval, runCommanderStep } from "@/services";
+import { USE_MOCKS, clearScenario, getThoughtTrace, injectFault, respondToApproval, runCommanderStep } from "@/services";
 import { useAppStore } from "./appStore";
 import { toast } from "./toastStore";
 
@@ -26,6 +26,8 @@ interface ScenarioState {
   traceStatus: "loading" | "ready" | "error";
   /** Bumped whenever the grid changes, so views reload getGridState(). */
   gridVersion: number;
+  /** Bumped every few seconds with the live backend, so live views refresh. */
+  liveTick: number;
   /** True while the Commander is thinking (shows ThinkingSteps). */
   thinking: boolean;
   /** Outcome of every run this session, per scenario type (oldest first). */
@@ -37,6 +39,8 @@ interface ScenarioState {
   sessionLessons: Lesson[];
 
   loadTrace: () => Promise<void>;
+  /** Live backend heartbeat: refresh the grid and the agents' trace. */
+  pulse: () => Promise<void>;
   run: (type: FaultType, opts?: Partial<Omit<FaultRequest, "type">>) => Promise<void>;
   respond: (decision: Decision, response: ApprovalResponse) => Promise<void>;
   end: () => Promise<void>;
@@ -80,6 +84,7 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
   decisions: [],
   traceStatus: "loading",
   gridVersion: 0,
+  liveTick: 0,
   thinking: false,
   history: {},
   lastRequest: null,
@@ -93,6 +98,19 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
       set({ decisions: await getThoughtTrace(), traceStatus: "ready" });
     } catch {
       set({ traceStatus: "error" });
+    }
+  },
+
+  pulse: async () => {
+    if (USE_MOCKS) return;
+    set((s) => ({ liveTick: s.liveTick + 1, gridVersion: s.gridVersion + 1 }));
+    // The backend owns the trace: the agents re-plan on their own, so pick up new decisions.
+    if (get().phase === "responding") return;
+    try {
+      const decisions = await getThoughtTrace();
+      if (get().phase !== "responding") set({ decisions, traceStatus: "ready" });
+    } catch {
+      /* keep the last trace; the grid view shows the connection problem */
     }
   },
 

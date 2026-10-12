@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Lock, Palette, Target } from "lucide-react";
+import { Clock3, Lock, Palette, Target } from "lucide-react";
 import { Card, IconTile, PageHeader, ThemeSwitcher } from "@/components/ui";
 import { ControlModeHero } from "@/components/settings/ControlModeHero";
 import { GoalPresets } from "@/components/settings/GoalPresets";
+import { SimulationClock } from "@/components/settings/SimulationClock";
 import { GuardrailRules } from "@/components/agents/GuardrailRules";
 
 function Section({ icon, title, description, children }: { icon: ReactNode; title: string; description: ReactNode; children: ReactNode }) {
@@ -45,7 +46,14 @@ export default function Settings() {
             <GoalPresets />
           </Section>
         </div>
-        <div className="min-w-0 xl:col-span-4 xl:col-start-9 xl:row-start-1">
+        <div className="min-w-0 space-y-6 xl:col-span-4 xl:col-start-9 xl:row-start-1 xl:row-span-2">
+          <Section
+            icon={<IconTile icon={<Clock3 />} tone="ai" size="sm" />}
+            title="Simulation clock"
+            description="Live follows real Indian time and today's weather. Demo evening starts at 17:20 and runs faster."
+          >
+            <SimulationClock />
+          </Section>
           <Section
             icon={<IconTile icon={<Palette />} tone="accent" size="sm" />}
             title="Appearance"

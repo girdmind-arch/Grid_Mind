@@ -22,7 +22,8 @@ function liveStatus(id: AgentId, phase: ScenarioPhase, type: FaultType | undefin
  * updated live from the thought trace.
  */
 export function useLiveAgents() {
-  const roster = useService(getAgents);
+  const liveTick = useScenarioStore((s) => s.liveTick);
+  const roster = useService(getAgents, [liveTick]);
   const { decisions, phase, active, loadTrace } = useScenarioStore();
 
   useEffect(() => {

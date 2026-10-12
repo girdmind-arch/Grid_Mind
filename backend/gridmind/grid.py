@@ -1,33 +1,36 @@
-"""The live campus grid: a simulated clock, the current fault and the controller.
+"""The live campus grid: clock, weather, the current fault and the controller.
 
-The demo day starts at 17:20 IST on Tue 12 May 2026, just before the evening
-peak, and runs at real speed. After LOOP_HOURS it starts the evening again, so
-a long-running server always shows the interesting part of the day.
+Two clock modes:
+  live  real Indian time (IST) and real weather; the day rolls over at midnight
+        and "cost today" resets like a real meter.
+  demo  today's real weather from 17:20, just before the evening peak, running
+        at 1x, 10x or 60x so the peak can be watched in a few minutes.
 """
 
 from __future__ import annotations
 
+import os
 import threading
 import time
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 
-from . import campus as c
 from .simulator import Battery, Conditions, Policy, StepResult, Totals, best_peak_target, simulate, step
+from .weather import Weather
 
 IST = timezone(timedelta(hours=5, minutes=30))
-SIM_DAY = datetime(2026, 5, 12, tzinfo=IST)
-SIM_START_HOUR = 17 + 20 / 60
-LOOP_HOURS = 4.0
+DEMO_START_HOUR = 17 + 20 / 60
 STEP_MIN = 1.0
+MAX_CATCH_UP_H = 36.0  # if the server was asleep, don't replay more than this
 
 
 def iso(dt: datetime) -> str:
     return dt.astimezone(IST).isoformat(timespec="seconds")
 
 
-def at_hour(hour: float) -> datetime:
-    return SIM_DAY + timedelta(hours=hour)
+def midnight_ist(now: datetime | None = None) -> datetime:
+    n = (now or datetime.now(IST)).astimezone(IST)
+    return n.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 @dataclass
@@ -41,102 +44,157 @@ class Fault:
     mitigated: bool = False
 
 
-def conditions_for(fault: Fault | None) -> Conditions:
+def apply_fault(base: Conditions, fault: Fault | None) -> Conditions:
     if not fault:
-        return Conditions()
+        return base
     if fault.type == "cloud_cover":
-        return Conditions(solar_factor=max(0.0, 1 - 0.15 * fault.severity))
+        return replace(base, solar_factor=max(0.0, 1 - 0.15 * fault.severity))
     if fault.type == "heatwave":
-        return Conditions(heat_severity=fault.severity)
+        return replace(base, heat_severity=fault.severity)
     if fault.type == "line_failure":
-        return Conditions(line_fault_zone=fault.target_zone_id or "hostel-narmada")
+        return replace(base, line_fault_zone=fault.target_zone_id or "hostel-narmada")
     if fault.type == "grid_outage":
-        return Conditions(outage=True)
-    return Conditions()
+        return replace(base, outage=True)
+    return base
 
 
 class LiveGrid:
-    """Holds the live state. All methods are thread-safe."""
+    """Holds the live state. All public methods are thread-safe."""
 
-    def __init__(self, clock=time.monotonic):
-        self._clock = clock
+    def __init__(self, weather: Weather | None = None, wall=time.time, clock_mode: str | None = None):
+        self.weather = weather or Weather(fetch=False)
+        self._wall = wall
         self._lock = threading.RLock()
         self.mode = "ai"  # ai | fallback | manual
         self.fault: Fault | None = None
         self.incident_counter = 41
-        self._reset_day()
+        self.clock_mode = clock_mode or os.environ.get("GRIDMIND_CLOCK", "live")
+        self.speed = 1.0
+        self.policy = self.default_policy()
+        self._reset_clock()
 
-    # ---------- clock ----------
-    def _elapsed_hours(self) -> float:
-        return (self._clock() - self._t0) / 3600
+    # ---------- time ----------
+    def at(self, hour: float) -> datetime:
+        """Sim hour (hours since the sim day's midnight) -> datetime."""
+        return self.day + timedelta(hours=hour)
+
+    def _now_ist(self) -> datetime:
+        return datetime.fromtimestamp(self._wall(), IST)
+
+    def _target_hour(self) -> float:
+        if self.clock_mode == "live":
+            return (self._now_ist() - self.day).total_seconds() / 3600
+        return self._anchor_hour + (self._wall() - self._anchor_wall) * self.speed / 3600
 
     def hour(self) -> float:
-        """Current simulated hour of the day (17.33 = 17:20)."""
         with self._lock:
             self._advance()
             return self._hour
 
     def now(self) -> datetime:
-        return at_hour(self.hour())
+        return self.at(self.hour())
 
-    def _reset_day(self):
-        """Simulates 00:00 -> 17:20 so today's cost and battery level are real.
+    def conditions(self, fault: Fault | None = "current") -> Conditions:  # type: ignore[assignment]
+        """Live weather plus the effect of a fault (the current one by default)."""
+        base = Conditions(weather=self._weather_fn)
+        return apply_fault(base, self.fault if fault == "current" else fault)
 
-        The battery starts the day at 82%, charged at off-peak rates the night before.
-        """
-        self._t0 = self._clock()
-        self.policy = self.default_policy()
-        start_pol = replace(self.policy, peak_target_kw=None)
-        bat, tot, _ = simulate(0, SIM_START_HOUR, Conditions(), start_pol, soc_pct=82.0, dt_min=STEP_MIN)
-        _, base_tot, _ = simulate(0, SIM_START_HOUR, Conditions(), Policy.baseline(), soc_pct=82.0, dt_min=STEP_MIN)
-        self.battery: Battery = bat
-        self.totals: Totals = tot
-        self.base_battery = Battery(82.0)
-        self.base_totals: Totals = base_tot
-        self._hour = SIM_START_HOUR
-        self.policy.peak_target_kw = best_peak_target(self._hour, Conditions(), self.policy, self.battery.soc_pct)
-        self.last: StepResult = step(Battery(self.battery.soc_pct), Totals(), self._hour, 0.0, Conditions(), self.policy)
-        self.prev: StepResult = self.last
+    def _weather_fn(self, hour: float) -> tuple[float, float]:
+        solar, temp, _, _ = self.weather.at(self.at(hour))
+        return solar, temp
 
-    def default_policy(self) -> Policy:
-        return Policy(ai=True, night_charge_to_pct=82.0, precool=True, hvac_trim=True)
-
-    def _advance(self):
-        target = SIM_START_HOUR + self._elapsed_hours()
-        if target - SIM_START_HOUR >= LOOP_HOURS:
-            # Start the evening again (keeps memory and incidents, resets the grid).
+    # ---------- clock control ----------
+    def set_clock(self, mode: str, speed: float):
+        with self._lock:
+            self.clock_mode = mode
+            self.speed = speed if mode == "demo" else 1.0
             self.fault = None
             self.mode = "ai"
-            self._reset_day()
+            self._reset_clock()
+
+    def _reset_clock(self):
+        """Starts the day: simulates midnight -> now so today's cost and battery level are real."""
+        self.day = midnight_ist(self._now_ist())
+        start = (self._now_ist() - self.day).total_seconds() / 3600 if self.clock_mode == "live" else DEMO_START_HOUR
+        self._anchor_hour, self._anchor_wall = start, self._wall()
+        base = Conditions(weather=self._weather_fn)
+        reserve = self.policy.reserve_floor_pct
+        self.policy = replace(self.default_policy(), reserve_floor_pct=reserve)
+        pre = replace(self.policy, peak_target_kw=self._evening_target(0.0, 70.0, base))
+        bat, tot, _ = simulate(0, start, base, pre, soc_pct=70.0, dt_min=5)
+        _, base_tot, _ = simulate(0, start, base, Policy.baseline(), soc_pct=70.0, dt_min=5)
+        self.battery: Battery = bat
+        self.totals: Totals = tot
+        self.base_battery = Battery(70.0)
+        self.base_totals: Totals = base_tot
+        self._hour = start
+        self.replan_peak()
+        self.last: StepResult = self.snapshot_unlocked()
+
+    def _evening_target(self, from_hour: float, soc: float, cond: Conditions) -> float:
+        """Battery import cap for the next evening peak, sized in the twin."""
+        day_start = from_hour - (from_hour % 24)
+        evening = day_start + 17 if from_hour % 24 < 22 else day_start + 24 + 17
+        start = max(from_hour, evening)
+        if from_hour < evening:
+            # Battery state by 17:00 if nothing else happens before then.
+            bat, _, _ = simulate(from_hour, evening, cond, replace(self.policy, peak_target_kw=None), soc, dt_min=10)
+            soc = bat.soc_pct
+        return best_peak_target(start, cond, self.policy, soc, end_hour=evening + 5)
+
+    def replan_peak(self):
+        with self._lock:
+            self.policy.peak_target_kw = self._evening_target(self._hour, self.battery.soc_pct, self.conditions(None))
+
+    def _advance(self):
+        target = self._target_hour()
+        if target - self._hour > MAX_CATCH_UP_H:
+            self._reset_clock()
             return
         dt_h = STEP_MIN / 60
-        cond = conditions_for(self.fault)
         while self._hour + dt_h <= target:
-            self.prev = self.last
+            cond = self.conditions()
             self.last = step(self.battery, self.totals, self._hour, dt_h, cond, self.active_policy())
             step(self.base_battery, self.base_totals, self._hour, dt_h, cond, Policy.baseline())
             self._hour += dt_h
+            if self._hour >= 24:
+                self._new_day()
+                target -= 24  # same moment, measured from the new midnight
+
+    def _new_day(self):
+        """Midnight: the meter for "today" starts again; the battery carries over."""
+        self.day += timedelta(days=1)
+        self._hour -= 24
+        self._anchor_hour -= 24
+        if self.fault:
+            self.fault.started_hour -= 24
+        self.totals = Totals()
+        self.base_totals = Totals()
 
     # ---------- control ----------
+    def default_policy(self) -> Policy:
+        return Policy(ai=True, night_charge_to_pct=82.0, precool=True, hvac_trim=True)
+
     def active_policy(self) -> Policy:
         """What actually runs: the agents' policy, or safe fixed rules."""
         if self.mode == "ai":
             return self.policy
-        # Fallback rules and manual: battery only covers outages, no optimisation.
-        level = self.policy.outage_hostel_level if self.fault and self.fault.type == "grid_outage" else 0.0
+        outage = bool(self.fault and self.fault.type == "grid_outage")
         return Policy(
             ai=True,
             night_charge_to_pct=82.0,
             reroute_fraction=self.policy.reroute_fraction,
-            outage_hostel_level=level or (0.5 if self.fault and self.fault.type == "grid_outage" else 0.0),
+            outage_hostel_level=(self.policy.outage_hostel_level or 0.5) if outage else 0.0,
         )
 
+    def snapshot_unlocked(self) -> StepResult:
+        return step(Battery(self.battery.soc_pct), Totals(), self._hour, 0.0, self.conditions(), self.active_policy())
+
     def snapshot(self) -> StepResult:
-        """A zero-length step at the current time with the current policy (no state change)."""
+        """A zero-length step at the current time (no state change)."""
         with self._lock:
             self._advance()
-            cond = conditions_for(self.fault)
-            return step(Battery(self.battery.soc_pct), Totals(), self._hour, 0.0, cond, self.active_policy())
+            return self.snapshot_unlocked()
 
     def start_fault(self, type_: str, severity: int, duration_min: int, target_zone_id: str | None) -> Fault:
         with self._lock:
@@ -144,21 +202,15 @@ class LiveGrid:
             self.incident_counter += 1
             if type_ == "line_failure":
                 target_zone_id = target_zone_id or "hostel-narmada"
-            self.fault = Fault(
-                type=type_,
-                severity=max(1, min(5, severity)),
-                duration_min=duration_min,
-                incident_id=f"INC-{self.incident_counter}",
-                started_hour=self._hour,
-                target_zone_id=target_zone_id,
-            )
+            self.fault = Fault(type_, max(1, min(5, severity)), duration_min, f"INC-{self.incident_counter}", self._hour, target_zone_id)
             self.mode = "ai"
-            # The fault hits before anyone reacts: reset any response from earlier.
+            # The fault hits before anyone reacts: drop any earlier scenario response.
+            keep = self.policy
             self.policy = replace(
                 self.default_policy(),
-                peak_target_kw=self.policy.peak_target_kw,
-                reserve_floor_pct=self.policy.reserve_floor_pct,
-                night_charge_to_pct=self.policy.night_charge_to_pct,
+                peak_target_kw=keep.peak_target_kw,
+                reserve_floor_pct=keep.reserve_floor_pct,
+                night_charge_to_pct=keep.night_charge_to_pct,
             )
             return self.fault
 
@@ -167,9 +219,8 @@ class LiveGrid:
             self._advance()
             self.fault = None
             self.mode = "ai"
-            reserve = self.policy.reserve_floor_pct
-            self.policy = replace(self.default_policy(), reserve_floor_pct=reserve)
-            self.policy.peak_target_kw = best_peak_target(self._hour, Conditions(), self.policy, self.battery.soc_pct)
+            self.policy = replace(self.default_policy(), reserve_floor_pct=self.policy.reserve_floor_pct)
+            self.replan_peak()
 
     def apply_policy(self, pol: Policy, mitigated: bool = True):
         with self._lock:
@@ -182,3 +233,20 @@ class LiveGrid:
         with self._lock:
             self._advance()
             self.mode = mode
+
+    # ---------- reporting ----------
+    def environment(self) -> dict:
+        with self._lock:
+            when = self.at(self._hour)
+        solar, temp, cloud, live = self.weather.at(when)
+        status = self.weather.status()
+        return {
+            "clock": self.clock_mode,
+            "speed": self.speed,
+            "weatherSource": status["source"] if live else "profile",
+            "location": status["location"],
+            "temperatureC": round(temp, 1),
+            "cloudPct": round(cloud),
+            "solarPotentialKw": round(solar),
+            "weatherUpdatedAt": status["updatedAt"],
+        }

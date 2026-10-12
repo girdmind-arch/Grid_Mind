@@ -5,9 +5,9 @@
 // backend instead. Endpoint paths are the proposed contract; adjust them here
 // in one place if the backend team picks different ones.
 
-import type { ControlMode, FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
-import type { Agent, ApprovalResponse, ControlModeAck, Decision, GoalAck, GuardrailRule, IncidentMemory, Results, ScenarioRunHistory } from "@/types/agents";
-import { USE_MOCKS, mockDelay, request } from "./api";
+import type { ControlMode, Environment, FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
+import type { Agent, ApprovalResponse, ControlModeAck, ControlState, Decision, GoalAck, WhatIfSettings, GuardrailRule, IncidentMemory, Results, ScenarioRunHistory } from "@/types/agents";
+import { ServiceError, USE_MOCKS, mockDelay, request } from "./api";
 import { applyApproval, buildGridState, clearFault, currentFault, mitigateFault, runInfo, startFault } from "./mock/state";
 import { buildForecast } from "./mock/forecast";
 import { DECISIONS, LEARNING, SCENARIO_DECISIONS } from "./mock/agents";
@@ -20,7 +20,7 @@ import { simNow, syncSimClock } from "@/utils/simTime";
 export async function getGridState(): Promise<GridState> {
   if (!USE_MOCKS) {
     const state = await request<GridState>("/api/grid/state");
-    syncSimClock(state.timestamp);
+    syncSimClock(state.timestamp, state.environment?.speed ?? 1);
     return state;
   }
   // MOCK: consistent snapshot from the in-browser demo campus.
@@ -189,6 +189,29 @@ export async function getResults(): Promise<Results> {
   // MOCK: evaluation numbers from the simulated campus.
   await mockDelay(350);
   return RESULTS;
+}
+
+/** Re-runs the five-day evaluation with different campus settings. */
+export async function runWhatIf(settings: WhatIfSettings): Promise<Results> {
+  if (!USE_MOCKS) return request<Results>("/api/results/whatif", { method: "POST", body: JSON.stringify(settings) });
+  // MOCK: the offline demo cannot simulate; it returns the standard results.
+  await mockDelay(400);
+  throw new ServiceError("What-if needs the live backend. This copy runs on demo data.");
+}
+
+/** Current mode and goal on the backend (used when the app opens). */
+export async function getControl(): Promise<ControlState | null> {
+  if (!USE_MOCKS) return request<ControlState>("/api/control");
+  // MOCK: nothing to restore; the app keeps its defaults.
+  return null;
+}
+
+/** Simulation clock: live (real time and weather) or a sped-up demo evening. */
+export async function setSimulation(clock: Environment["clock"], speed: number): Promise<Environment> {
+  if (!USE_MOCKS) return request<Environment>("/api/sim", { method: "POST", body: JSON.stringify({ clock, speed }) });
+  // MOCK: the offline demo has a fixed clock.
+  await mockDelay(200);
+  throw new ServiceError("The simulation clock needs the live backend. This copy runs on demo data.");
 }
 
 /** Recovery time for every evaluation run of each scenario (run 1, 2, 3…). */

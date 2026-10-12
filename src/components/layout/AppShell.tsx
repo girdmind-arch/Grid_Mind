@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
+import { useLiveBackend } from "@/hooks/useLiveBackend";
 
 /** Layout for every /app page: sidebar (desktop), top bar, content, bottom nav (mobile). */
 export function AppShell() {
@@ -12,6 +13,7 @@ export function AppShell() {
   // useOutlet() captures the current page, so the old page can fade out
   // while the new one waits (a plain <Outlet /> would swap instantly).
   const outlet = useOutlet();
+  useLiveBackend();
 
   return (
     <div className="min-h-dvh bg-bg print:bg-surface">

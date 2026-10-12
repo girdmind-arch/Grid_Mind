@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Download } from "lucide-react";
+import type { Results as ResultsData } from "@/types/agents";
 import { getResults, getRunHistory } from "@/services";
 import { useService } from "@/hooks/useService";
 import { useScenarioStore } from "@/store/scenarioStore";
@@ -6,7 +8,8 @@ import { Button, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { ResultsHero } from "@/components/results/ResultsHero";
 import { CostChart, PeakChart, RecoveryChart } from "@/components/results/ComparisonCharts";
 import { RunImprovement } from "@/components/results/RunImprovement";
-import { formatDate } from "@/utils/format";
+import { WhatIfPanel } from "@/components/results/WhatIfPanel";
+import { formatDate, formatNumber } from "@/utils/format";
 import { simNow } from "@/utils/simTime";
 import { printPage } from "@/utils/printPage";
 
@@ -14,7 +17,15 @@ export default function Results() {
   const results = useService(getResults);
   const runHistory = useService(getRunHistory);
   const sessionRuns = useScenarioStore((s) => s.history);
-  const data = results.data;
+  // A what-if run replaces the numbers until the operator goes back to the real campus.
+  const [whatIf, setWhatIf] = useState<ResultsData | null>(null);
+  const base = whatIf ?? results.data;
+  const data = base && whatIf?.settings
+    ? {
+        ...base,
+        dataNote: `What-if: ${whatIf.settings.batteryKwh === 0 ? "no battery" : `${formatNumber(whatIf.settings.batteryKwh / 1000, 2)} MWh battery`}, ${whatIf.settings.solarPct}% solar, peak ₹${whatIf.settings.peakRate.toFixed(2)}/kWh${whatIf.settings.tempOffsetC ? `, ${whatIf.settings.tempOffsetC > 0 ? "+" : ""}${whatIf.settings.tempOffsetC}°C` : ""}`,
+      }
+    : base;
 
   return (
     <>
@@ -50,6 +61,9 @@ export default function Results() {
       {data && (
         <>
           <ResultsHero results={data} />
+          <div className="mt-6">
+            <WhatIfPanel onResults={(r) => setWhatIf(r)} />
+          </div>
           <div className="mt-6 grid gap-6 xl:grid-cols-2 print:block print:space-y-6">
             <CostChart data={data.cost} />
             <PeakChart data={data.peak} />

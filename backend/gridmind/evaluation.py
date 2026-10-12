@@ -30,9 +30,12 @@ SCENARIO_LABELS = {"cloud_cover": "Cloud cover", "heatwave": "Heatwave", "line_f
 START_SOC = 82.0  # each day starts with the battery charged the night before
 
 
-def _day_cost(tot, end_soc: float = START_SOC) -> float:
+DEFAULTS = {"batteryKwh": c.BATTERY_CAPACITY_KWH, "solarPct": 100.0, "peakRate": c.TARIFF["peak"].rate, "tempOffsetC": 0.0}
+
+
+def _day_cost(tot, end_soc: float = START_SOC, capacity_kwh: float = c.BATTERY_CAPACITY_KWH) -> float:
     """Energy + penalties + demand charge, plus the off-peak cost of refilling the battery to its start level."""
-    refill_kwh = max(0.0, START_SOC - end_soc) / 100 * c.BATTERY_CAPACITY_KWH / c.BATTERY_EFF
+    refill_kwh = max(0.0, START_SOC - end_soc) / 100 * capacity_kwh / c.BATTERY_EFF
     return tot.cost_inr + tot.max_import_kw * c.DEMAND_CHARGE_INR_PER_KW_DAY + refill_kwh * c.TARIFF["off-peak"].rate
 
 
@@ -57,8 +60,14 @@ def _hourly_max_import(steps) -> dict[int, float]:
     return out
 
 
-@lru_cache(maxsize=1)
-def build_results() -> dict:
+def build_results(battery_kwh: float = DEFAULTS["batteryKwh"], solar_pct: float = 100.0,
+                  peak_rate: float = DEFAULTS["peakRate"], temp_offset_c: float = 0.0) -> dict:
+    """Results for the given campus settings (defaults = the real campus). Cached per setting."""
+    return _build(round(battery_kwh), round(solar_pct), round(peak_rate, 2), round(temp_offset_c, 1))
+
+
+@lru_cache(maxsize=64)
+def _build(battery_kwh: float, solar_pct: float, peak_rate: float, temp_offset_c: float) -> dict:
     cost, saved_by_level = [], {1: [], 2: [], 3: []}
     peak_gm = {h: 0.0 for h in PEAK_HOURS}
     peak_base = {h: 0.0 for h in PEAK_HOURS}
@@ -66,14 +75,16 @@ def build_results() -> dict:
     max_gm = max_base = 0.0
 
     for label, dem, sol in DAYS:
-        cond = Conditions(demand_factor=dem, solar_factor=sol)
+        cond = Conditions(demand_factor=dem, solar_factor=sol, battery_kwh=battery_kwh,
+                          solar_scale=solar_pct / 100, peak_rate=peak_rate, temp_offset_c=temp_offset_c)
         _, base_tot, base_steps = _simulate_day(cond, None)
         base_cost = _day_cost(base_tot)
         for level in (1, 2, 3):
             bat, t, steps = _simulate_day(cond, _ai_policy(level))
-            saved_by_level[level].append((base_cost, _day_cost(t, bat.soc_pct)))
+            day_cost = _day_cost(t, bat.soc_pct, battery_kwh)
+            saved_by_level[level].append((base_cost, day_cost))
             if level == 3:
-                gm_tot, gm_steps, gm_cost = t, steps, _day_cost(t, bat.soc_pct)
+                gm_tot, gm_steps, gm_cost = t, steps, day_cost
         cost.append({"label": label, "gridmind": round(gm_cost), "baseline": round(base_cost)})
         tot_gm += gm_cost
         tot_base += base_cost
@@ -96,8 +107,10 @@ def build_results() -> dict:
         saved = (1 - sum(g for _, g in pairs) / sum(b for b, _ in pairs)) * 100
         runs.append({"run": run, "recoveryMin": rec, "costSavedPct": round(saved, 1)})
 
+    changed = {"batteryKwh": battery_kwh, "solarPct": solar_pct, "peakRate": peak_rate, "tempOffsetC": temp_offset_c}
     return {
         "dataNote": "Simulated campus calibrated on public data.",
+        "settings": changed,
         "headline": {
             "costSavedPct": round((1 - tot_gm / tot_base) * 100, 1),
             "peakReducedPct": round((1 - max_gm / max_base) * 100, 1),

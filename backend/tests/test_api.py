@@ -112,3 +112,52 @@ def test_bad_input_is_rejected(client):
 def test_battery_constants_match_the_guardrails():
     assert c.BATTERY_FLOOR_PCT == 20 and c.BATTERY_CEIL_PCT == 90
     assert c.CONTRACT_LIMIT_KW == 1600
+
+
+def test_environment_and_clock(client):
+    env = client.get("/api/grid/state").json()["environment"]
+    assert env["clock"] in {"live", "demo"} and env["weatherSource"] in {"open-meteo", "profile"}
+    demo = client.post("/api/sim", json={"clock": "demo", "speed": 60}).json()
+    assert demo["clock"] == "demo" and demo["speed"] == 60
+    assert client.get("/api/grid/state").json()["timestamp"][11:16] == "17:20"
+    live = client.post("/api/sim", json={"clock": "live", "speed": 1}).json()
+    assert live["clock"] == "live" and live["speed"] == 1
+    assert client.post("/api/sim", json={"clock": "warp", "speed": 1}).status_code == 422
+
+
+def test_what_if_changes_the_results(client):
+    base = client.get("/api/results").json()["headline"]
+    none = client.post("/api/results/whatif", json={"batteryKwh": 0, "solarPct": 100, "peakRate": 9.7, "tempOffsetC": 0}).json()
+    big = client.post("/api/results/whatif", json={"batteryKwh": 4000, "solarPct": 100, "peakRate": 9.7, "tempOffsetC": 0}).json()
+    assert none["headline"]["peakReducedPct"] < base["peakReducedPct"] < big["headline"]["peakReducedPct"] + 0.01
+    assert none["headline"]["costSavedPct"] < big["headline"]["costSavedPct"]
+    assert big["settings"]["batteryKwh"] == 4000
+    assert client.post("/api/results/whatif", json={"batteryKwh": -5}).status_code == 422
+
+
+def test_control_state_survives_a_reload(client):
+    client.post("/api/control/mode", json={"mode": "fallback"})
+    client.post("/api/goal", json={"goal": "Protect battery health; avoid deep discharge."})
+    state = client.get("/api/control").json()
+    assert state["mode"] == "fallback" and "battery" in state["goal"].lower() and "40%" in state["interpretation"]
+    client.post("/api/goal", json={"goal": "Keep labs at full power and keep tonight's bill low."})
+
+
+def test_weather_drives_solar_and_demand():
+    from datetime import datetime
+
+    from gridmind.grid import IST, LiveGrid
+    from gridmind.weather import Weather
+
+    def weather(ghi, temp):
+        w = Weather(fetch=False)
+        hours = [f"2026-10-13T{h:02d}:00" for h in range(24)]
+        w.load({"hourly": {"time": hours, "temperature_2m": [temp] * 24, "shortwave_radiation": [ghi] * 24, "cloud_cover": [10] * 24}})
+        return w
+
+    noon = datetime(2026, 10, 13, 12, 30, tzinfo=IST).timestamp()
+    sunny = LiveGrid(weather(900, 30), wall=lambda: noon).snapshot()
+    cloudy = LiveGrid(weather(250, 30), wall=lambda: noon).snapshot()
+    hot = LiveGrid(weather(900, 42), wall=lambda: noon).snapshot()
+    assert sunny.solar_kw > cloudy.solar_kw * 3
+    assert hot.demand_kw > sunny.demand_kw

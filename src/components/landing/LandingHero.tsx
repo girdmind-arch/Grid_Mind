@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, PlayCircle } from "lucide-react";
-import { getGridState } from "@/services";
+import { USE_MOCKS, getGridState } from "@/services";
 import { useService } from "@/hooks/useService";
 import { Badge, Button, Skeleton } from "@/components/ui";
 import { GridDiagram } from "@/components/grid/GridDiagram";
@@ -8,7 +9,15 @@ import { formatKw } from "@/utils/format";
 
 /** The page's one gradient hero: tagline, what GridMind is, the demo button, and a live grid preview. */
 export function LandingHero() {
-  const grid = useService(getGridState);
+  // With the live backend the preview refreshes every few seconds.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (USE_MOCKS) return;
+    const id = window.setInterval(() => setTick((t) => t + 1), 5000);
+    return () => window.clearInterval(id);
+  }, []);
+  const grid = useService(getGridState, [tick]);
+  const env = grid.data?.environment;
 
   return (
     <div className="mx-auto w-full max-w-[var(--content-max)] px-[var(--gutter)] pt-6 sm:pt-10 lg:px-[var(--gutter-lg)]">
@@ -50,7 +59,10 @@ export function LandingHero() {
             ) : (
               <Skeleton className="h-[380px]" />
             )}
-            <p className="mt-3 text-[13px] text-fg-subtle">Simulated campus · 4 hostels, 2 labs, library, admin block</p>
+            <p className="mt-3 text-[13px] text-fg-subtle">
+              Simulated campus · 4 hostels, 2 labs, library, admin block
+              {env && env.weatherSource === "open-meteo" && ` · live weather, ${env.location} ${Math.round(env.temperatureC)}°C`}
+            </p>
           </div>
         </div>
       </section>

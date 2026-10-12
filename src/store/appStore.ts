@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ControlMode } from "@/types/grid";
+import type { ControlMode, Environment } from "@/types/grid";
 
 // Small shared app state. Anything that comes from the backend lives in
 // services; this store only holds UI-level state shared across pages.
@@ -15,6 +15,10 @@ interface AppState {
   goal: string;
   goalInterpretation: string | null;
   setGoal: (goal: string, interpretation: string) => void;
+
+  /** Clock and weather from the live backend (null on demo data). */
+  environment: Environment | null;
+  setEnvironment: (env: Environment | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -23,4 +27,6 @@ export const useAppStore = create<AppState>((set) => ({
   goal: DEFAULT_GOAL,
   goalInterpretation: null,
   setGoal: (goal, goalInterpretation) => set({ goal, goalInterpretation }),
+  environment: null,
+  setEnvironment: (environment) => set({ environment }),
 }));
