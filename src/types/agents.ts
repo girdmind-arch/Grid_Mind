@@ -80,6 +80,8 @@ export interface ScenarioOutcome {
   baselineMin: number;
   /** Lesson from an earlier run that made this one faster. */
   lessonApplied?: string;
+  /** Lesson the Critic wrote after this run (first run of a scenario). */
+  lessonLearned?: string;
 }
 
 export type ApprovalStatus = "pending" | "approved" | "modified" | "rejected";

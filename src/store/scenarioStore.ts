@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { FaultRequest, FaultType } from "@/types/grid";
-import type { ApprovalResponse, Decision, ScenarioOutcome } from "@/types/agents";
+import type { ApprovalResponse, Decision, Incident, Lesson, ScenarioOutcome } from "@/types/agents";
 import { clearScenario, getThoughtTrace, injectFault, respondToApproval, runCommanderStep } from "@/services";
 import { useAppStore } from "./appStore";
 import { toast } from "./toastStore";
@@ -32,6 +32,9 @@ interface ScenarioState {
   history: Partial<Record<FaultType, ScenarioOutcome[]>>;
   /** Settings of the last scenario, used by "Replay same scenario". */
   lastRequest: FaultRequest | null;
+  /** Incidents and lessons created during this session (shown on Memory). */
+  sessionIncidents: Incident[];
+  sessionLessons: Lesson[];
 
   loadTrace: () => Promise<void>;
   run: (type: FaultType, opts?: Partial<Omit<FaultRequest, "type">>) => Promise<void>;
@@ -42,6 +45,35 @@ interface ScenarioState {
 
 const DEFAULTS = { severity: 3, durationMin: 30 };
 
+/** Turns a scenario decision into a memory entry (what happened, what was done, result). */
+function incidentFrom(type: FaultType, d: Decision): Incident {
+  const act = d.steps.find((s) => s.kind === "act")?.summary;
+  const result = d.steps.find((s) => s.kind === "result")?.summary;
+  return {
+    id: d.incidentId ?? d.id,
+    occurredAt: d.startedAt,
+    type,
+    title: d.title,
+    cause: d.trigger,
+    action: act ?? `Proposed: ${d.plans.find((p) => p.id === d.chosenPlanId)?.summary ?? ""} Waiting for operator approval.`,
+    outcome: result ?? "Pending operator approval.",
+    recoveryMin: d.outcome?.recoveryMin ?? 0,
+  };
+}
+
+/** Adds a new lesson (first run) or counts a reuse (replay). */
+function updateLessons(lessons: Lesson[], d: Decision): Lesson[] {
+  const o = d.outcome;
+  if (!o || !d.incidentId) return lessons;
+  if (o.lessonLearned && !lessons.some((l) => l.note === o.lessonLearned)) {
+    return [{ id: `L-${d.incidentId}`, incidentId: d.incidentId, note: o.lessonLearned, appliedCount: 0 }, ...lessons];
+  }
+  if (o.lessonApplied) {
+    return lessons.map((l) => (l.note === o.lessonApplied ? { ...l, appliedCount: l.appliedCount + 1 } : l));
+  }
+  return lessons;
+}
+
 export const useScenarioStore = create<ScenarioState>((set, get) => ({
   phase: "idle",
   active: null,
@@ -51,6 +83,8 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
   thinking: false,
   history: {},
   lastRequest: null,
+  sessionIncidents: [],
+  sessionLessons: [],
 
   loadTrace: async () => {
     if (get().decisions.length) return;
@@ -83,6 +117,8 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
         thinking: false,
         decisions: [decision, ...s.decisions],
         history: outcome ? { ...s.history, [type]: [...(s.history[type] ?? []), outcome] } : s.history,
+        sessionIncidents: [incidentFrom(type, decision), ...s.sessionIncidents],
+        sessionLessons: updateLessons(s.sessionLessons, decision),
         phase: needsApproval ? "awaiting-approval" : "stable",
         active: s.active && { ...s.active, stabilisedAtMs: needsApproval ? null : Date.now() },
         gridVersion: s.gridVersion + 1,
@@ -99,6 +135,9 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
     const updated = await respondToApproval(decision, response);
     set((s) => ({
       decisions: s.decisions.map((d) => (d.id === updated.id ? updated : d)),
+      sessionIncidents: s.sessionIncidents.map((i) =>
+        i.id === updated.incidentId && s.active ? incidentFrom(s.active.type, updated) : i,
+      ),
       phase: "stable",
       active: s.active && { ...s.active, stabilisedAtMs: Date.now() },
       gridVersion: s.gridVersion + 1,

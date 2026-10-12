@@ -98,6 +98,7 @@ export async function runCommanderStep(): Promise<Decision> {
       recoveryMin,
       baselineMin: Math.round(learning.baselineMin * severityFactor * 10) / 10,
       lessonApplied: replay ? learning.lesson : undefined,
+      lessonLearned: replay ? undefined : learning.lesson,
     },
     steps: template.steps
       // Until approved, the "act" and "result" steps have not happened yet.

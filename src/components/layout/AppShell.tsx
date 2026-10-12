@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { useLocation, useOutlet } from "react-router";
+import { Skeleton } from "@/components/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -35,12 +37,23 @@ export function AppShell() {
               exit={{ opacity: 0, transition: { duration: 0.12 } }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
-              {outlet}
+              <Suspense fallback={<PageLoading />}>{outlet}</Suspense>
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
       <BottomNav />
+    </div>
+  );
+}
+
+/** Shown for a moment the first time a page's code is downloaded. */
+function PageLoading() {
+  return (
+    <div aria-busy="true" aria-label="Loading page">
+      <Skeleton className="mb-3 h-4 w-40" />
+      <Skeleton className="mb-6 h-9 w-72" />
+      <Skeleton className="h-56" />
     </div>
   );
 }
