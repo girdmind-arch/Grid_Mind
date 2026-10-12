@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="GridMind: an agentic-AI control room for a campus microgrid that thinks, acts, and explains." />
+    <meta name="theme-color" content="#f4f7fb" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>GridMind · Smart Grid Intelligence</title>
+    <!--
+      No-flash theme script: runs before React so the first paint already uses
+      the right theme. Keep the storage key in sync with src/hooks/useTheme.tsx.
+    -->
+    <script>
+      (function () {
+        var pref = "system";
+        try {
+          var saved = localStorage.getItem("gridmind-theme");
+          if (saved === "light" || saved === "dark" || saved === "system") pref = saved;
+        } catch (e) {}
+        var dark =
+          pref === "dark" ||
+          (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        var theme = dark ? "dark" : "light";
+        var root = document.documentElement;
+        root.setAttribute("data-theme", theme);
+        root.style.colorScheme = theme;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", dark ? "#060c18" : "#f4f7fb");
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

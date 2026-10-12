@@ -1,0 +1,140 @@
+/*
+ * GridMind design tokens.
+ *
+ * Every color in the app comes from these variables. Light and dark are tuned
+ * separately (not inverted). `data-theme` on <html> picks the set; it is set by
+ * the inline script in index.html before React renders, then kept in sync by
+ * useTheme().
+ *
+ * Spacing uses Tailwind's 4px scale (p-4 = 16px). Layout-level spacing lives here.
+ */
+
+:root {
+  /* ---------- Shared (theme-independent) ---------- */
+  --font-sans: "Plus Jakarta Sans Variable", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Layout spacing */
+  --gutter: 16px;
+  --gutter-lg: 32px;
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+  --bottomnav-h: 68px;
+  --content-max: 1440px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --lift: -2px;
+
+  /* ---------- Light theme (default) ---------- */
+  color-scheme: light;
+
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #eaf0f7;
+  --border: #dfe6ef;
+  --border-strong: #c3cedc;
+
+  --text: #0b1526;
+  --text-muted: #4b5a73;    /* 7.0:1 on surface */
+  --text-subtle: #5f6d84;   /* 5.3:1 on surface, 4.9:1 on bg */
+
+  --accent: #0b63c4;        /* interactive blue */
+  --accent-hover: #0a56aa;
+  --on-accent: #ffffff;
+
+  --success: #127a3e;       /* electric green, deepened for white */
+  --warning: #a65300;       /* solar amber, deepened for white */
+  --danger: #c0262d;
+  --ai: #4a3fd1;            /* agent thinking */
+  --solar: #975100;         /* generation (amber family) */
+
+  /* Hero gradient: blue -> teal. White text passes AA on both stops. */
+  --hero-from: #0a4fb3;
+  --hero-to: #0a7480;
+  --hero-text: #ffffff;
+  --hero-text-muted: rgba(255, 255, 255, 0.86);
+
+  /* Shadows: light uses soft shadows instead of glows */
+  --shadow-sm: 0 1px 2px rgba(15, 30, 60, 0.05), 0 1px 3px rgba(15, 30, 60, 0.04);
+  --shadow-md: 0 2px 4px rgba(15, 30, 60, 0.04), 0 8px 24px rgba(15, 30, 60, 0.07);
+  --shadow-lg: 0 4px 8px rgba(15, 30, 60, 0.05), 0 20px 48px rgba(15, 30, 60, 0.12);
+  --shadow-hero: 0 12px 32px rgba(10, 79, 179, 0.22);
+  --glow-success: 0 0 0 3px rgba(18, 122, 62, 0.16);
+  --glow-danger: 0 0 0 3px rgba(192, 38, 45, 0.18);
+  --glow-ai: 0 0 0 3px rgba(74, 63, 209, 0.14);
+
+  /* Charts (categorical, AA against surface) */
+  --chart-1: #0b63c4; /* GridMind */
+  --chart-2: #8a97ab; /* baseline */
+  --chart-3: #127a3e;
+  --chart-4: #975100;
+  --chart-5: #4a3fd1;
+  --chart-grid: #e6ecf3;
+
+  --focus-ring: #0b63c4;
+  --overlay: rgba(11, 21, 38, 0.42);
+  --theme-color: #f4f7fb;
+}
+
+/* ---------- Dark theme ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #060c18;
+  --surface: #0c1527;
+  --surface-raised: #121d34;
+  --surface-sunken: #08101f;
+  --border: #1c2942;
+  --border-strong: #2a3b5c;
+
+  --text: #e9eef8;
+  --text-muted: #a3b0c7;    /* 8.4:1 on surface */
+  --text-subtle: #8796b0;   /* 6.0:1 on surface */
+
+  --accent: #5aaeff;
+  --accent-hover: #7bbfff;
+  --on-accent: #041122;
+
+  --success: #3ad683;
+  --warning: #f3b33f;
+  --danger: #ff6b6b;
+  --ai: #a49cff;
+  --solar: #f7b648;
+
+  --hero-from: #1747a8;
+  --hero-to: #0b6772;
+  --hero-text: #ffffff;
+  --hero-text-muted: rgba(255, 255, 255, 0.84);
+
+  /* Dark uses a hairline highlight + deep shadow, and soft glows */
+  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 48px rgba(0, 0, 0, 0.5);
+  --shadow-hero: 0 16px 40px rgba(23, 71, 168, 0.35);
+  --glow-success: 0 0 16px rgba(58, 214, 131, 0.35);
+  --glow-danger: 0 0 18px rgba(255, 107, 107, 0.45);
+  --glow-ai: 0 0 16px rgba(164, 156, 255, 0.3);
+
+  --chart-1: #5aaeff;
+  --chart-2: #7a88a3;
+  --chart-3: #3ad683;
+  --chart-4: #f7b648;
+  --chart-5: #a49cff;
+  --chart-grid: #1a2640;
+
+  --focus-ring: #7bbfff;
+  --overlay: rgba(2, 6, 14, 0.66);
+  --theme-color: #060c18;
+}

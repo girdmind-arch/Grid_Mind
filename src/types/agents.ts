@@ -1,0 +1,111 @@
+import type { FaultType, ISODate } from "./grid";
+
+export type AgentId =
+  | "commander"
+  | "forecaster"
+  | "zone"
+  | "planner"
+  | "fault"
+  | "critic"
+  | "guardrail";
+
+export type AgentStatus = "idle" | "thinking" | "acting";
+
+export interface Agent {
+  id: AgentId;
+  name: string;
+  role: string;
+  status: AgentStatus;
+  lastAction: string;
+  tools: string[];
+}
+
+// ---------- Thought trace ----------
+export type TraceStepKind = "observe" | "reason" | "plan" | "safety" | "act" | "result";
+
+export interface TraceStep {
+  id: string;
+  kind: TraceStepKind;
+  agent: AgentId;
+  at: ISODate;
+  summary: string;
+  detail?: string;
+}
+
+export type RiskLevel = "low" | "medium" | "high";
+
+export interface Plan {
+  id: "A" | "B";
+  title: string;
+  summary: string;
+  costInr: number;
+  risk: RiskLevel;
+  comfortPct: number; // 0–100, how much of normal comfort is kept
+  actions: string[];
+}
+
+export interface Decision {
+  id: string;
+  startedAt: ISODate;
+  title: string;
+  trigger: string;
+  steps: TraceStep[];
+  plans: [Plan, Plan];
+  chosenPlanId: Plan["id"];
+  chosenReason: string;
+  /** Plain-language answer to "Why did you do that?" */
+  explanation: string;
+  usedMemory?: { incidentId: string; summary: string };
+  /** High-impact decisions pause for operator approval. */
+  approval?: { status: "pending" | "approved" | "modified" | "rejected"; risk: string };
+}
+
+export interface GoalAck {
+  goal: string;
+  interpretation: string;
+  acceptedAt: ISODate;
+}
+
+// ---------- Memory ----------
+export interface Incident {
+  id: string;
+  occurredAt: ISODate;
+  type: FaultType;
+  title: string;
+  cause: string;
+  action: string;
+  outcome: string;
+  recoveryMin: number;
+}
+
+export interface Lesson {
+  id: string;
+  incidentId: string;
+  note: string;
+  appliedCount: number;
+}
+
+export interface IncidentMemory {
+  incidents: Incident[];
+  lessons: Lesson[];
+}
+
+// ---------- Results ----------
+export interface ResultsSeriesPoint {
+  label: string;
+  gridmind: number;
+  baseline: number;
+}
+
+export interface Results {
+  dataNote: string;
+  headline: {
+    costSavedPct: number;
+    peakReducedPct: number;
+    recovery: { gridmindMin: number; baselineMin: number };
+  };
+  cost: ResultsSeriesPoint[]; // INR per day
+  peak: ResultsSeriesPoint[]; // kW per hour
+  recovery: ResultsSeriesPoint[]; // minutes per scenario
+  runs: { run: 1 | 2 | 3; recoveryMin: number; costSavedPct: number }[];
+}
