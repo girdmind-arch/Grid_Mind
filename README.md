@@ -105,6 +105,7 @@ Project rules for contributors (design, theme tokens, data flow) are in [`CLAUDE
 ## How the backend works
 
 - **Live clock and weather.** By default the campus runs on real Indian time. Every 15 minutes the backend fetches the real hourly temperature, solar irradiance and cloud cover for the campus location from [Open-Meteo](https://open-meteo.com) (free, no API key). Solar output comes from the irradiance, and cooling load rises and falls with the temperature. At midnight the "cost today" meter resets. If the weather service can't be reached, the backend uses a typical hot-day profile and the top bar says so. **Demo evening** (Settings) restarts the campus at 17:20 with today's weather at 1×, 10× or 60× speed, so judges can watch the evening peak arrive.
+- **Anywhere in India.** Settings → Campus location searches any city, town or campus in India (Open-Meteo place search, with a built-in list of about 30 cities as a fallback). Moving the campus switches the live weather to that place, applies that state's time-of-day tariff and DISCOM (`backend/gridmind/locations.py`), and re-simulates today. Results change too, because they use the state's tariff. The tariffs are illustrative; check each DISCOM's latest tariff order. Heating load is not modelled, so in a cold winter the cooling load just drops to its minimum.
 - **Agents that keep watching.** Every few seconds the Commander checks whether time or weather has moved on, and re-plans for the period it is in: recharge at night, hold the battery by day, shave the evening peak. Each re-plan appears in the thought trace, and the website refreshes every 5 seconds.
 - **Grid simulator.** Every simulated minute, building loads follow a hot-weekday profile. Solar follows the clear-sky curve (cut by clouds in a cloud-cover scenario), and the battery and grid make up the rest. Faults really change the grid: a line failure takes a hostel off its feeder, and a grid outage islands the campus.
 - **Digital twin and planning.** For each situation the Commander builds Plan A and Plan B and simulates both up to 22:00. The battery's evening import cap is sized by binary search in the twin. Each result is checked against the six guardrails (labs powered, battery 20–90%, feeders ≤ 90%, import ≤ 1,600 kW, hostel comfort, approval for high-impact actions). The passing plan with the best score for the operator's goal wins. The score adds cost, a comfort penalty, and a value-of-lost-load charge for any building left dark.
@@ -153,7 +154,10 @@ If the backend is unreachable or returns an error, the UI shows a calm message (
 | `setSimulation(clock, speed)` | `POST /api/sim` | `Environment` |
 | `runWhatIf(settings)` | `POST /api/results/whatif` | `Results` |
 
-Backend settings (environment variables): `CAMPUS_LAT`, `CAMPUS_LON` and `CAMPUS_NAME` set the weather location (default Lucknow). `GRIDMIND_CLOCK=demo` starts in demo mode. `GRIDMIND_OFFLINE=1` skips the weather fetch.
+| `searchLocations(q)` | `GET /api/locations/search?q=` | places in India |
+| `getLocation()` / `setLocation(place)` | `GET` / `POST /api/location` | `CampusLocation` |
+
+Backend settings (environment variables): `CAMPUS_LAT`, `CAMPUS_LON`, `CAMPUS_NAME` and `CAMPUS_STATE` set the starting location (default Lucknow, Uttar Pradesh). It can also be changed at any time in Settings. `GRIDMIND_CLOCK=demo` starts in demo mode. `GRIDMIND_OFFLINE=1` skips the weather fetch.
 
 **Never put API keys in the frontend.** Anything secret (LLM keys, weather API keys) belongs in the backend.
 
@@ -165,7 +169,7 @@ Backend settings (environment variables): `CAMPUS_LAT`, `CAMPUS_LON` and `CAMPUS
 
 ## Campus data
 
-A mid-sized Indian campus on a hot May evening: UPPCL-style tariff slabs (peak ₹9.70/kWh from 18:00 to 22:00, off-peak ₹6.90/kWh overnight), solar peaking at midday, and an evening demand peak of about 1,510 kW at 19:00.
+A mid-sized Indian campus: 4 hostels, 2 labs, a library and an admin block, a ~720 kW rooftop solar array, and a 2 MWh battery. The demand profile is a hot weekday with an evening peak of about 1,510 kW at 19:00; live weather scales it up or down. The default tariff is UPPCL-style (peak ₹9.70/kWh from 18:00 to 22:00, off-peak ₹6.90/kWh overnight); other states use their own rates.
 
 The backend's evaluation gives **5.4% lower daily cost, 26.5% lower peak grid import, and 2.6 vs 14 min fault recovery** compared with no AI. The offline demo data in `src/services/mock/results.ts` is a snapshot of that output, so both modes show the same figures. Regenerate it if the simulation changes.
 

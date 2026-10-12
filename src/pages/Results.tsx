@@ -62,7 +62,11 @@ export default function Results() {
         <>
           <ResultsHero results={data} />
           <div className="mt-6">
-            <WhatIfPanel onResults={(r) => setWhatIf(r)} />
+            <WhatIfPanel
+              key={results.data?.settings ? JSON.stringify(results.data.settings) : "default"}
+              defaults={results.data?.settings}
+              onResults={(r) => setWhatIf(r)}
+            />
           </div>
           <div className="mt-6 grid gap-6 xl:grid-cols-2 print:block print:space-y-6">
             <CostChart data={data.cost} />

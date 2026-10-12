@@ -161,3 +161,18 @@ def test_weather_drives_solar_and_demand():
     hot = LiveGrid(weather(900, 42), wall=lambda: noon).snapshot()
     assert sunny.solar_kw > cloudy.solar_kw * 3
     assert hot.demand_kw > sunny.demand_kw
+
+
+def test_campus_can_move_anywhere_in_india(client):
+    found = client.get("/api/locations/search", params={"q": "chen"}).json()
+    chennai = next(p for p in found["results"] if p["name"] == "Chennai")
+    assert chennai["state"] == "Tamil Nadu" and chennai["discom"]
+    before = client.get("/api/results").json()["cost"][0]["baseline"]
+    loc = client.post("/api/location", json={k: chennai[k] for k in ("name", "state", "lat", "lon")}).json()
+    assert loc["name"] == "Chennai" and loc["tariff"]["peak"] == chennai["tariff"]["peak"]
+    env = client.get("/api/grid/state").json()["environment"]
+    assert env["location"] == "Chennai" and env["state"] == "Tamil Nadu"
+    assert client.get("/api/results").json()["cost"][0]["baseline"] != before  # new state's tariff
+    assert client.post("/api/location", json={"name": "London", "state": "", "lat": 51.5, "lon": -0.1}).status_code == 422
+    lucknow = client.get("/api/locations/search", params={"q": "luck"}).json()["results"][0]
+    client.post("/api/location", json={k: lucknow[k] for k in ("name", "state", "lat", "lon")})

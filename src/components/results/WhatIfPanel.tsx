@@ -17,16 +17,24 @@ const SLIDERS: {
 }[] = [
   { key: "batteryKwh", label: "Battery size", min: 0, max: 5000, step: 250, show: (v) => (v === 0 ? "No battery" : `${formatNumber(v / 1000, 2)} MWh`) },
   { key: "solarPct", label: "Solar array", min: 0, max: 250, step: 10, show: (v) => `${v}% of the current array (${formatNumber(Math.round(7.2 * v))} kW peak)` },
-  { key: "peakRate", label: "Peak tariff", min: 7, max: 15, step: 0.25, show: (v) => `₹${v.toFixed(2)}/kWh` },
+  { key: "peakRate", label: "Peak tariff", min: 5, max: 15, step: 0.05, show: (v) => `₹${v.toFixed(2)}/kWh` },
   { key: "tempOffsetC", label: "Weather", min: -6, max: 6, step: 1, show: (v) => (v === 0 ? "Typical May week" : `${v > 0 ? "+" : ""}${v}°C ${v > 0 ? "hotter" : "cooler"}`) },
 ];
 
 const same = (a: WhatIfSettings, b: WhatIfSettings) => SLIDERS.every((s) => Math.abs(a[s.key] - b[s.key]) < 1e-6);
 
 /** Change the campus and re-run the five-day simulation on the backend. */
-export function WhatIfPanel({ onResults }: { onResults: (r: Results | null, s: WhatIfSettings) => void }) {
-  const [draft, setDraft] = useState<WhatIfSettings>(DEFAULT_SETTINGS);
-  const [applied, setApplied] = useState<WhatIfSettings>(DEFAULT_SETTINGS);
+export function WhatIfPanel({
+  defaults = DEFAULT_SETTINGS,
+  onResults,
+}: {
+  /** The real campus's settings (its state's peak rate). */
+  defaults?: WhatIfSettings;
+  onResults: (r: Results | null, s: WhatIfSettings) => void;
+}) {
+  const DEFAULT = defaults;
+  const [draft, setDraft] = useState<WhatIfSettings>(DEFAULT);
+  const [applied, setApplied] = useState<WhatIfSettings>(DEFAULT);
   const [running, setRunning] = useState(false);
 
   const run = async (settings: WhatIfSettings) => {
@@ -34,7 +42,7 @@ export function WhatIfPanel({ onResults }: { onResults: (r: Results | null, s: W
     try {
       const r = await runWhatIf(settings);
       setApplied(settings);
-      onResults(same(settings, DEFAULT_SETTINGS) ? null : r, settings);
+      onResults(same(settings, DEFAULT) ? null : r, settings);
     } catch (e) {
       toast({ title: "Could not re-run the simulation.", description: e instanceof ServiceError ? e.message : "Try again.", tone: "warning" });
     } finally {
@@ -80,12 +88,12 @@ export function WhatIfPanel({ onResults }: { onResults: (r: Results | null, s: W
           {running ? <Loader2 className="animate-spin" /> : <FlaskConical />}
           {running ? "Simulating 5 days…" : "Re-run simulation"}
         </Button>
-        {!same(applied, DEFAULT_SETTINGS) && (
+        {!same(applied, DEFAULT) && (
           <Button
             variant="ghost"
             onClick={() => {
-              setDraft(DEFAULT_SETTINGS);
-              void run(DEFAULT_SETTINGS);
+              setDraft(DEFAULT);
+              void run(DEFAULT);
             }}
             disabled={running}
           >

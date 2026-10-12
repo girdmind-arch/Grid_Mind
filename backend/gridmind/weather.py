@@ -29,6 +29,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 LAT = float(os.environ.get("CAMPUS_LAT", "26.85"))
 LON = float(os.environ.get("CAMPUS_LON", "80.95"))
 NAME = os.environ.get("CAMPUS_NAME", "Lucknow")
+STATE = os.environ.get("CAMPUS_STATE", "Uttar Pradesh")
 REFRESH_S = 15 * 60
 API = "https://api.open-meteo.com/v1/forecast"
 
@@ -54,6 +55,7 @@ class Weather:
         self._cloud: list[float] = []
         self.updated_at: datetime | None = None
         self.error: str | None = None
+        self.lat, self.lon, self.name, self.state = LAT, LON, NAME, STATE
         if fetch and os.environ.get("GRIDMIND_OFFLINE") != "1":
             threading.Thread(target=self._loop, daemon=True).start()
 
@@ -63,10 +65,20 @@ class Weather:
             self.refresh()
             time.sleep(REFRESH_S)
 
+    def set_location(self, name: str, state: str, lat: float, lon: float, fetch: bool = True) -> bool:
+        """Moves the campus. Clears the old forecast and fetches the new one straight away."""
+        with self._lock:
+            self.lat, self.lon, self.name, self.state = lat, lon, name, state
+            self._times, self._temp, self._ghi, self._cloud = [], [], [], []
+            self.updated_at = None
+        return self.refresh() if fetch and os.environ.get("GRIDMIND_OFFLINE") != "1" else False
+
     def refresh(self) -> bool:
+        with self._lock:
+            lat, lon, name = self.lat, self.lon, self.name
         params = {
-            "latitude": LAT,
-            "longitude": LON,
+            "latitude": lat,
+            "longitude": lon,
             "hourly": "temperature_2m,shortwave_radiation,cloud_cover",
             "timezone": "Asia/Kolkata",
             "past_days": 1,
@@ -75,8 +87,12 @@ class Weather:
         url = f"{API}?{urllib.parse.urlencode(params)}"
         try:
             with urllib.request.urlopen(url, timeout=10) as r:
-                self.load(json.load(r))
-            log.info("weather updated from Open-Meteo for %s", NAME)
+                data = json.load(r)
+            with self._lock:
+                if (self.lat, self.lon) != (lat, lon):
+                    return False  # the campus moved while this was loading
+            self.load(data)
+            log.info("weather updated from Open-Meteo for %s", name)
             return True
         except Exception as e:  # network, HTTP or parse error: keep the last good data
             with self._lock:
@@ -131,7 +147,10 @@ class Weather:
         with self._lock:
             return {
                 "source": "open-meteo" if self._times else "profile",
-                "location": NAME,
+                "location": self.name,
+                "state": self.state,
+                "lat": self.lat,
+                "lon": self.lon,
                 "updatedAt": self.updated_at.isoformat(timespec="seconds") if self.updated_at else None,
                 "error": self.error,
             }

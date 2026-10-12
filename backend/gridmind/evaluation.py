@@ -30,7 +30,7 @@ SCENARIO_LABELS = {"cloud_cover": "Cloud cover", "heatwave": "Heatwave", "line_f
 START_SOC = 82.0  # each day starts with the battery charged the night before
 
 
-DEFAULTS = {"batteryKwh": c.BATTERY_CAPACITY_KWH, "solarPct": 100.0, "peakRate": c.TARIFF["peak"].rate, "tempOffsetC": 0.0}
+DEFAULTS = {"batteryKwh": c.BATTERY_CAPACITY_KWH, "solarPct": 100.0, "tempOffsetC": 0.0}
 
 
 def _day_cost(tot, end_soc: float = START_SOC, capacity_kwh: float = c.BATTERY_CAPACITY_KWH) -> float:
@@ -61,13 +61,14 @@ def _hourly_max_import(steps) -> dict[int, float]:
 
 
 def build_results(battery_kwh: float = DEFAULTS["batteryKwh"], solar_pct: float = 100.0,
-                  peak_rate: float = DEFAULTS["peakRate"], temp_offset_c: float = 0.0) -> dict:
-    """Results for the given campus settings (defaults = the real campus). Cached per setting."""
-    return _build(round(battery_kwh), round(solar_pct), round(peak_rate, 2), round(temp_offset_c, 1))
+                  peak_rate: float | None = None, temp_offset_c: float = 0.0) -> dict:
+    """Results for the given campus settings (defaults = the real campus and its state's tariff). Cached."""
+    rate = c.TARIFF["peak"].rate if peak_rate is None else peak_rate
+    return _build(round(battery_kwh), round(solar_pct), round(rate, 2), round(temp_offset_c, 1), c.tariff_key())
 
 
 @lru_cache(maxsize=64)
-def _build(battery_kwh: float, solar_pct: float, peak_rate: float, temp_offset_c: float) -> dict:
+def _build(battery_kwh: float, solar_pct: float, peak_rate: float, temp_offset_c: float, _tariff: tuple) -> dict:
     cost, saved_by_level = [], {1: [], 2: [], 3: []}
     peak_gm = {h: 0.0 for h in PEAK_HOURS}
     peak_base = {h: 0.0 for h in PEAK_HOURS}

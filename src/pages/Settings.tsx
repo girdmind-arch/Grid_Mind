@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Clock3, Lock, Palette, Target } from "lucide-react";
+import { Clock3, Lock, MapPin, Palette, Target } from "lucide-react";
 import { Card, IconTile, PageHeader, ThemeSwitcher } from "@/components/ui";
 import { ControlModeHero } from "@/components/settings/ControlModeHero";
 import { GoalPresets } from "@/components/settings/GoalPresets";
 import { SimulationClock } from "@/components/settings/SimulationClock";
+import { CampusLocationPicker } from "@/components/settings/CampusLocationPicker";
 import { GuardrailRules } from "@/components/agents/GuardrailRules";
 
 function Section({ icon, title, description, children }: { icon: ReactNode; title: string; description: ReactNode; children: ReactNode }) {
@@ -47,6 +48,13 @@ export default function Settings() {
           </Section>
         </div>
         <div className="min-w-0 space-y-6 xl:col-span-4 xl:col-start-9 xl:row-start-1 xl:row-span-2">
+          <Section
+            icon={<IconTile icon={<MapPin />} tone="accent" size="sm" />}
+            title="Campus location"
+            description="Anywhere in India. Sets the live weather and the state's electricity tariff."
+          >
+            <CampusLocationPicker />
+          </Section>
           <Section
             icon={<IconTile icon={<Clock3 />} tone="ai" size="sm" />}
             title="Simulation clock"
