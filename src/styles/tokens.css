@@ -75,9 +75,11 @@
   --glow-danger: 0 0 0 3px rgba(192, 38, 45, 0.18);
   --glow-ai: 0 0 0 3px rgba(74, 63, 209, 0.14);
 
-  /* Charts (categorical, AA against surface) */
+  /* Charts. 1 vs 2 checked with the dataviz palette validator (contrast >= 3:1,
+     colour-blind separation). The baseline is grey on purpose: GridMind is the
+     highlighted series, the no-AI baseline is the muted comparison. */
   --chart-1: #0b63c4; /* GridMind */
-  --chart-2: #8a97ab; /* baseline */
+  --chart-2: #7b889e; /* baseline */
   --chart-3: #127a3e;
   --chart-4: #975100;
   --chart-5: #4a3fd1;
@@ -127,8 +129,8 @@
   --glow-danger: 0 0 18px rgba(255, 107, 107, 0.45);
   --glow-ai: 0 0 16px rgba(164, 156, 255, 0.3);
 
-  --chart-1: #5aaeff;
-  --chart-2: #7a88a3;
+  --chart-1: #3f97ee;
+  --chart-2: #64718a;
   --chart-3: #3ad683;
   --chart-4: #f7b648;
   --chart-5: #a49cff;
