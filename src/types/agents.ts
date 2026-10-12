@@ -58,8 +58,21 @@ export interface Decision {
   usedMemory?: { incidentId: string; summary: string };
   /** Set when this decision responded to a scenario / incident. */
   incidentId?: string;
+  /** Scenario outcome measured in the digital twin (simulated minutes). */
+  outcome?: ScenarioOutcome;
   /** High-impact decisions pause for operator approval. */
   approval?: Approval;
+}
+
+export interface ScenarioOutcome {
+  /** Which time this scenario type has been run (1, 2, 3…). */
+  run: number;
+  /** Simulated minutes from fault to a stable grid. */
+  recoveryMin: number;
+  /** Same scenario with no AI (rule-free baseline). */
+  baselineMin: number;
+  /** Lesson from an earlier run that made this one faster. */
+  lessonApplied?: string;
 }
 
 export type ApprovalStatus = "pending" | "approved" | "modified" | "rejected";

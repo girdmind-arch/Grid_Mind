@@ -105,7 +105,7 @@ export function GridDiagram({ state, className }: { state: GridState; className?
       key: "grid",
       name: "Main grid",
       value: outage ? "Offline" : formatKw(state.gridImportKw),
-      sub: outage ? "Supply lost" : `Buying at ₹${state.tariff.ratePerKwh.toFixed(2)}/kWh`,
+      sub: outage ? "Supply lost" : `₹${state.tariff.ratePerKwh.toFixed(2)}/kWh`,
       kw: state.gridImportKw,
       tone: outage ? "fault" : "grid",
       icon: <UtilityPole />,

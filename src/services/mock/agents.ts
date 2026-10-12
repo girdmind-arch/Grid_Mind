@@ -153,3 +153,31 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     },
   },
 };
+
+/**
+ * MOCK: how each scenario improves when it is replayed. Recovery is in
+ * simulated minutes at medium severity (3); run 3 matches the Results page.
+ * Baselines are the same scenario with no AI.
+ */
+export const LEARNING: Record<FaultType, { recoveryByRun: [number, number, number]; baselineMin: number; lesson: string }> = {
+  cloud_cover: {
+    recoveryByRun: [3.2, 2.1, 1.5],
+    baselineMin: 9,
+    lesson: "Start battery bridging as soon as solar drops 20%, without waiting for a second reading.",
+  },
+  heatwave: {
+    recoveryByRun: [4.1, 2.8, 2.0],
+    baselineMin: 12,
+    lesson: "Start pre-cooling hostels as soon as it crosses 40°C.",
+  },
+  line_failure: {
+    recoveryByRun: [8.6, 6.0, 4.5],
+    baselineMin: 21,
+    lesson: "Keep feeder F2's spare capacity pre-checked so the reroute is ready before a fault.",
+  },
+  grid_outage: {
+    recoveryByRun: [5.2, 3.6, 2.5],
+    baselineMin: 14,
+    lesson: "Prepare the reduced-hostel plan in advance so approval takes one tap.",
+  },
+};

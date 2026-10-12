@@ -8,9 +8,9 @@
 import type { FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
 import type { ApprovalResponse, Decision, GoalAck, IncidentMemory, Results } from "@/types/agents";
 import { USE_MOCKS, mockDelay, request } from "./api";
-import { applyApproval, buildGridState, clearFault, currentFault, mitigateFault, startFault } from "./mock/state";
+import { applyApproval, buildGridState, clearFault, currentFault, mitigateFault, runInfo, startFault } from "./mock/state";
 import { buildForecast } from "./mock/forecast";
-import { DECISIONS, SCENARIO_DECISIONS } from "./mock/agents";
+import { DECISIONS, LEARNING, SCENARIO_DECISIONS } from "./mock/agents";
 import { MEMORY } from "./mock/memory";
 import { RESULTS } from "./mock/results";
 import { simNow } from "@/utils/simTime";
@@ -48,6 +48,15 @@ export async function clearScenario(): Promise<void> {
   clearFault();
 }
 
+// MOCK: the pre-written texts describe severity 3; rewrite the numbers so they
+// match the severity the operator picked (same formulas as mock/state.ts).
+function withSeverity<T>(template: T, type: FaultRequest["type"], severity: number): T {
+  let json = JSON.stringify(template);
+  if (type === "cloud_cover") json = json.replaceAll("140 kW", `${Math.round(310 * 0.15 * severity)} kW`);
+  if (type === "heatwave") json = json.replaceAll("up 12%", `up ${4 * severity}%`);
+  return JSON.parse(json) as T;
+}
+
 /**
  * Asks the Commander to run one observe→plan→act cycle and return its decision.
  * High-impact decisions come back with approval.status "pending" and are NOT
@@ -56,23 +65,47 @@ export async function clearScenario(): Promise<void> {
 export async function runCommanderStep(): Promise<Decision> {
   if (!USE_MOCKS) return request<Decision>("/api/agents/commander/step", { method: "POST" });
   // MOCK: returns a pre-written decision for the active scenario. No AI is called.
-  await mockDelay(2600);
+  // Replays respond faster and cite the lesson from the previous run.
   const fault = currentFault();
-  if (!fault) return DECISIONS[0];
+  if (!fault) {
+    await mockDelay(900);
+    return DECISIONS[0];
+  }
+  const { run, previousIncident } = runInfo(fault.type);
+  const learning = LEARNING[fault.type];
+  const runIndex = Math.min(run, 3) - 1;
+  await mockDelay([2600, 1900, 1300][runIndex]);
 
-  const template = SCENARIO_DECISIONS[fault.type];
+  const template = withSeverity(SCENARIO_DECISIONS[fault.type], fault.type, fault.severity);
   const startedAt = simNow().toISOString();
   const needsApproval = template.approval?.status === "pending";
   if (!needsApproval) mitigateFault();
+
+  const replay = run > 1 && previousIncident;
+  const severityFactor = 0.7 + 0.1 * fault.severity; // severity 3 = 1.0
+  const recoveryMin = Math.round(learning.recoveryByRun[runIndex] * severityFactor * 10) / 10;
+
   return {
     ...template,
     id: `dec-${fault.incidentId}`,
     incidentId: fault.incidentId,
     startedAt,
+    title: replay ? `${template.title} (run ${run})` : template.title,
+    usedMemory: replay ? { incidentId: previousIncident, summary: `Run ${run - 1}: ${learning.lesson}` } : template.usedMemory,
+    outcome: {
+      run,
+      recoveryMin,
+      baselineMin: Math.round(learning.baselineMin * severityFactor * 10) / 10,
+      lessonApplied: replay ? learning.lesson : undefined,
+    },
     steps: template.steps
       // Until approved, the "act" and "result" steps have not happened yet.
       .filter((s) => !needsApproval || (s.kind !== "act" && s.kind !== "result"))
-      .map((s) => ({ ...s, at: startedAt })),
+      .map((s) =>
+        replay && s.kind === "reason"
+          ? { ...s, at: startedAt, detail: `Lesson applied from ${previousIncident}: ${learning.lesson}` }
+          : { ...s, at: startedAt },
+      ),
   };
 }
 

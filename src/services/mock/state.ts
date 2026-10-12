@@ -6,7 +6,7 @@
 //   2. mitigated:   the agents' plan has been applied (or safe rules, if rejected)
 // Solar + battery + grid always equals demand, so the numbers stay believable.
 
-import type { ActiveFault, ControlMode, FaultRequest, GridState, PowerFlow, Trend, Zone } from "@/types/grid";
+import type { ActiveFault, ControlMode, FaultRequest, FaultType, GridState, PowerFlow, Trend, Zone } from "@/types/grid";
 import { simNow } from "@/utils/simTime";
 import { BATTERY_CAPACITY_KWH, ZONES, tariffAt } from "./campus";
 
@@ -18,6 +18,10 @@ let mode: ControlMode = "ai";
 /** Hostel power level used in a grid outage (operator can modify it). */
 let outageHostelLevel = 0.6;
 let incidentCounter = 41; // continues after the incidents in memory.ts
+/** How many times each scenario type has been run this session (for learning). */
+const runCounts: Partial<Record<FaultType, number>> = {};
+/** Incident id of the previous run of each type (memory for replays). */
+const lastIncident: Partial<Record<FaultType, string>> = {};
 
 function zonesNow(): Zone[] {
   const f = activeFault;
@@ -99,6 +103,8 @@ export function buildGridState(now: Date): GridState {
 
 export function startFault(req: FaultRequest): ActiveFault {
   incidentCounter += 1;
+  if (activeFault) lastIncident[activeFault.type] = activeFault.incidentId;
+  runCounts[req.type] = (runCounts[req.type] ?? 0) + 1;
   mode = "ai";
   outageHostelLevel = 0.6;
   activeFault = {
@@ -128,8 +134,11 @@ export function applyApproval(decision: "approve" | "modify" | "reject", hostelL
 }
 
 export function clearFault() {
+  if (activeFault) lastIncident[activeFault.type] = activeFault.incidentId;
   activeFault = null;
   mode = "ai";
 }
 
 export const currentFault = () => activeFault;
+/** Run number of the active scenario and the incident id of its previous run. */
+export const runInfo = (type: FaultType) => ({ run: runCounts[type] ?? 1, previousIncident: lastIncident[type] });

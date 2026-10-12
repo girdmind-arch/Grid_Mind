@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { FaultRequest, FaultType } from "@/types/grid";
-import type { ApprovalResponse, Decision } from "@/types/agents";
+import type { ApprovalResponse, Decision, ScenarioOutcome } from "@/types/agents";
 import { clearScenario, getThoughtTrace, injectFault, respondToApproval, runCommanderStep } from "@/services";
 import { useAppStore } from "./appStore";
 import { toast } from "./toastStore";
@@ -28,11 +28,16 @@ interface ScenarioState {
   gridVersion: number;
   /** True while the Commander is thinking (shows ThinkingSteps). */
   thinking: boolean;
+  /** Outcome of every run this session, per scenario type (oldest first). */
+  history: Partial<Record<FaultType, ScenarioOutcome[]>>;
+  /** Settings of the last scenario, used by "Replay same scenario". */
+  lastRequest: FaultRequest | null;
 
   loadTrace: () => Promise<void>;
   run: (type: FaultType, opts?: Partial<Omit<FaultRequest, "type">>) => Promise<void>;
   respond: (decision: Decision, response: ApprovalResponse) => Promise<void>;
   end: () => Promise<void>;
+  replay: () => Promise<void>;
 }
 
 const DEFAULTS = { severity: 3, durationMin: 30 };
@@ -44,6 +49,8 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
   traceStatus: "loading",
   gridVersion: 0,
   thinking: false,
+  history: {},
+  lastRequest: null,
 
   loadTrace: async () => {
     if (get().decisions.length) return;
@@ -56,8 +63,9 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
   },
 
   run: async (type, opts) => {
-    if (get().phase === "responding") return;
+    if (get().phase === "responding" || get().phase === "awaiting-approval") return;
     const req: FaultRequest = { type, ...DEFAULTS, ...opts };
+    set({ lastRequest: req });
     try {
       const fault = await injectFault(req);
       set((s) => ({
@@ -70,9 +78,11 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
 
       const decision = await runCommanderStep();
       const needsApproval = decision.approval?.status === "pending";
+      const outcome = decision.outcome;
       set((s) => ({
         thinking: false,
         decisions: [decision, ...s.decisions],
+        history: outcome ? { ...s.history, [type]: [...(s.history[type] ?? []), outcome] } : s.history,
         phase: needsApproval ? "awaiting-approval" : "stable",
         active: s.active && { ...s.active, stabilisedAtMs: needsApproval ? null : Date.now() },
         gridVersion: s.gridVersion + 1,
@@ -106,5 +116,14 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
     set((s) => ({ phase: "idle", active: null, thinking: false, gridVersion: s.gridVersion + 1 }));
     useAppStore.getState().setMode("ai");
     toast({ title: "Scenario ended", description: "The grid is back to normal operation.", tone: "neutral" });
+  },
+
+  replay: async () => {
+    const req = get().lastRequest;
+    if (!req) return;
+    // Back to normal first, then the same fault again. The agents remember the last run.
+    await clearScenario();
+    set((s) => ({ phase: "idle", active: null, gridVersion: s.gridVersion + 1 }));
+    await get().run(req.type, req);
   },
 }));
