@@ -1,5 +1,6 @@
 import { NavLink } from "react-router";
 import { FlaskConical } from "lucide-react";
+import { USE_MOCKS } from "@/services";
 import { cn } from "@/utils/cn";
 import { NAV_ITEMS } from "./nav";
 import { Logo } from "./Logo";
@@ -36,7 +37,11 @@ export function Sidebar() {
 
       <div className="m-3 flex items-start gap-2.5 rounded-md bg-surface-sunken p-3 text-[13px] leading-snug text-fg-muted">
         <FlaskConical aria-hidden className="mt-0.5 size-4 shrink-0" />
-        <span>Simulated campus. Demo data until the backend is connected.</span>
+        <span>
+          {USE_MOCKS
+            ? "Simulated campus. Demo data until the backend is connected."
+            : "Simulated campus, computed live by the GridMind backend."}
+        </span>
       </div>
     </aside>
   );

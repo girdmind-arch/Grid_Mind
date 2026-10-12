@@ -20,14 +20,21 @@ export default function Memory() {
   const [filter, setFilter] = useState<Filter>("all");
 
   // Past memory from the backend + what happened in this session, newest first.
+  // A real backend also records this session's incidents, so keep one copy of each.
   const incidents = useMemo(
     () =>
-      [...sessionIncidents, ...(memory.data?.incidents ?? [])].sort(
+      [
+        ...sessionIncidents.filter((s) => !memory.data?.incidents.some((i) => i.id === s.id)),
+        ...(memory.data?.incidents ?? []),
+      ].sort(
         (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
       ),
     [sessionIncidents, memory.data],
   );
-  const lessons = useMemo(() => [...sessionLessons, ...(memory.data?.lessons ?? [])], [sessionLessons, memory.data]);
+  const lessons = useMemo(
+    () => [...sessionLessons.filter((s) => !memory.data?.lessons.some((l) => l.note === s.note)), ...(memory.data?.lessons ?? [])],
+    [sessionLessons, memory.data],
+  );
   const sessionIds = useMemo(() => new Set(sessionIncidents.map((i) => i.id)), [sessionIncidents]);
 
   const shown = filter === "all" ? incidents : incidents.filter((i) => i.type === filter);

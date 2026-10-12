@@ -14,11 +14,15 @@ import { DECISIONS, LEARNING, SCENARIO_DECISIONS } from "./mock/agents";
 import { MEMORY } from "./mock/memory";
 import { AGENTS, GUARDRAILS } from "./mock/agentRoster";
 import { RESULTS, RUN_HISTORY } from "./mock/results";
-import { simNow } from "@/utils/simTime";
+import { simNow, syncSimClock } from "@/utils/simTime";
 
 /** Current grid snapshot: sources, battery, zones, flows, cost. */
 export async function getGridState(): Promise<GridState> {
-  if (!USE_MOCKS) return request<GridState>("/api/grid/state");
+  if (!USE_MOCKS) {
+    const state = await request<GridState>("/api/grid/state");
+    syncSimClock(state.timestamp);
+    return state;
+  }
   // MOCK: consistent snapshot from the in-browser demo campus.
   await mockDelay(300);
   return buildGridState(simNow());

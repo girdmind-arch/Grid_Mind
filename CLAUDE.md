@@ -6,7 +6,7 @@ GridMind is an agentic-AI system that manages a simulated campus microgrid (sola
 - Tagline: **A control room that thinks, acts, and explains.**
 - This repo holds the website (landing page at `/`) and the Control Room app (`/app/*`).
 - Audience: BITSETGO'26 judges (Agentic AI & ML), campus energy operators, students. Demoed on a projected laptop and opened on phones.
-- The Python/FastAPI backend (simulator, ML, agent loop) is built separately. The UI talks only to `src/services/`.
+- The Python/FastAPI backend (simulator, digital twin, agent loop) lives in `backend/`. The UI talks only to `src/services/`; `VITE_API_URL` switches it from demo data to the backend.
 
 ## How to work
 - **Scope:** build only the pages and features in the brief. Ideas go in a "Suggestions" note, not into code.

@@ -17,6 +17,11 @@ const RecoveryTooltip = makeTooltip(minutes);
 
 /** Electricity bill per day, last school week. Grouped columns. */
 export function CostChart({ data }: { data: ResultsSeriesPoint[] }) {
+  // Round the axis up to a clean step (₹20K below ₹1 lakh, ₹50K above).
+  const top = Math.max(...data.flatMap((d) => [d.gridmind, d.baseline]));
+  const stepInr = top > 100_000 ? 50_000 : 20_000;
+  const costMax = Math.ceil(top / stepInr) * stepInr;
+  const costTicks = Array.from({ length: costMax / stepInr + 1 }, (_, i) => i * stepInr);
   return (
     <ChartCard
       title="Electricity cost per day"
@@ -28,7 +33,7 @@ export function CostChart({ data }: { data: ResultsSeriesPoint[] }) {
         <BarChart data={data} barGap={2} barCategoryGap="28%" margin={{ top: 8, right: 4, bottom: 0, left: 0 }} accessibilityLayer={false}>
           <CartesianGrid vertical={false} stroke={GRID_STROKE} />
           <XAxis dataKey="label" tick={{ ...AXIS_TICK, fontFamily: "var(--font-sans)", fontSize: 13 }} tickLine={false} axisLine={{ stroke: GRID_STROKE }} />
-          <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} tickFormatter={inrK} width={52} domain={[0, 80_000]} ticks={[0, 20_000, 40_000, 60_000, 80_000]} />
+          <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} tickFormatter={inrK} width={56} domain={[0, costMax]} ticks={costTicks} />
           <Tooltip content={CostTooltip} cursor={{ fill: "var(--surface-sunken)" }} />
           {SERIES.map((s) => (
             <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} maxBarSize={24} radius={[4, 4, 0, 0]} isAnimationActive={false} />

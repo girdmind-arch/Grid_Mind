@@ -41,7 +41,7 @@ export function ResultsHero({ results }: { results: Results }) {
 
       <dl className="mt-7 grid gap-x-10 gap-y-6 sm:grid-cols-3">
         <HeroNumber value={costSavedPct} digits={1} unit="%" label="Lower electricity cost" note="Across five simulated weekdays" />
-        <HeroNumber value={peakReducedPct} digits={1} unit="%" label="Lower evening peak" note="Highest demand, 18:00–22:00" />
+        <HeroNumber value={peakReducedPct} digits={1} unit="%" label="Lower evening peak" note="Highest grid import of the day" />
         <HeroNumber
           value={recovery.gridmindMin}
           digits={1}
