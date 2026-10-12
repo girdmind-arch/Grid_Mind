@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type DependencyList } from "react";
 import { ServiceError } from "@/services";
 
 type State<T> =
@@ -12,8 +12,11 @@ type State<T> =
  *
  *   const grid = useService(getGridState);
  *   if (grid.status === "error") return <ErrorState message={grid.error} onRetry={grid.retry} />;
+ *
+ * Pass `deps` to reload when something changes. While reloading, the previous
+ * data stays available so the screen does not flash back to skeletons.
  */
-export function useService<T>(fn: () => Promise<T>) {
+export function useService<T>(fn: () => Promise<T>, deps: DependencyList = []) {
   const [state, setState] = useState<State<T>>({ status: "loading", data: undefined, error: null });
   const [attempt, setAttempt] = useState(0);
 
@@ -31,7 +34,7 @@ export function useService<T>(fn: () => Promise<T>) {
     return () => {
       cancelled = true;
     };
-  }, [fn, attempt]);
+  }, [fn, attempt, ...deps]);
 
   const retry = useCallback(() => setAttempt((a) => a + 1), []);
   return { ...state, retry };

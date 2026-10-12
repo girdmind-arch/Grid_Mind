@@ -5,7 +5,8 @@ import { cn } from "@/utils/cn";
 import { Button } from "./Button";
 
 // Accessible dialog: traps focus, closes on Escape, returns focus on close.
-// variant "center" is a classic modal; "sheet" slides up from the bottom (mobile).
+// variant "center" is a classic modal; "sheet" slides up from the bottom (mobile);
+// "full" fills the screen (e.g. the live grid on a projector).
 
 interface ModalProps {
   open?: boolean;
@@ -17,7 +18,7 @@ interface ModalProps {
   children?: ReactNode;
   /** Buttons row at the bottom. */
   footer?: ReactNode;
-  variant?: "center" | "sheet";
+  variant?: "center" | "sheet" | "full";
   className?: string;
 }
 
@@ -32,6 +33,8 @@ export function Modal({ open, onOpenChange, trigger, title, description, childre
             "fixed z-50 flex flex-col border border-border bg-surface-raised shadow-lg focus-visible:outline-none",
             variant === "center" &&
               "top-1/2 left-1/2 max-h-[85dvh] w-[calc(100vw-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl data-[state=open]:animate-pop-in data-[state=closed]:animate-fade-out",
+            variant === "full" &&
+              "inset-2 rounded-xl sm:inset-6 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
             variant === "sheet" &&
               "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-xl pb-[env(safe-area-inset-bottom)] data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out",
             className,
@@ -53,7 +56,16 @@ export function Modal({ open, onOpenChange, trigger, title, description, childre
               </Button>
             </Dialog.Close>
           </div>
-          {children && <div className="min-h-0 overflow-y-auto px-5 py-4 sm:px-6">{children}</div>}
+          {children && (
+            <div
+              className={cn(
+                "min-h-0 overflow-y-auto px-5 py-4 sm:px-6",
+                variant === "full" && "flex flex-1 flex-col justify-center",
+              )}
+            >
+              {children}
+            </div>
+          )}
           {footer && (
             <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">{footer}</div>
           )}

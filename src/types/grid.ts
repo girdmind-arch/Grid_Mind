@@ -16,6 +16,8 @@ export interface Zone {
   demandKw: number;
   status: ZoneStatus;
   priority: ZonePriority;
+  /** Short plain-language note, e.g. "On backup feeder F2". */
+  note?: string;
 }
 
 export type TariffSlab = "off-peak" | "normal" | "peak";
@@ -49,6 +51,8 @@ export interface GridState {
   gridImportKw: number;
   battery: BatteryState;
   costTodayInr: number;
+  /** What today would have cost with no AI (rule-free baseline). */
+  baselineCostTodayInr: number;
   tariff: Tariff;
   trends: { demand: Trend; solar: Trend; battery: Trend; grid: Trend; cost: Trend };
   zones: Zone[];
@@ -92,6 +96,8 @@ export interface FaultRequest {
 export interface ActiveFault extends FaultRequest {
   incidentId: string;
   startedAt: ISODate;
+  /** True once the agents' response has been applied to the grid. */
+  mitigated: boolean;
 }
 
 export interface FaultResult {

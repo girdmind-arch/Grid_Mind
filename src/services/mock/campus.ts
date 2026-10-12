@@ -5,8 +5,7 @@
 
 import type { Tariff, Zone } from "@/types/grid";
 
-/** Simulated "now" the demo starts at: Tue 12 May 2026, 17:20 IST. */
-export const SIM_START = "2026-05-12T17:20:00+05:30";
+export { SIM_START } from "@/utils/simTime";
 
 // MOCK: zones and their demand at 17:20.
 export const ZONES: Zone[] = [
@@ -20,7 +19,8 @@ export const ZONES: Zone[] = [
   { id: "admin", name: "Admin Block", kind: "admin", demandKw: 100, status: "normal", priority: "high" },
 ];
 
-export const BATTERY_CAPACITY_KWH = 1000;
+// 2 MWh campus battery; 20–90% is the usable window set by the Guardrail.
+export const BATTERY_CAPACITY_KWH = 2000;
 
 // MOCK: UPPCL-style time-of-day tariff (illustrative rates, not official).
 export const TARIFF_SLABS: (Tariff & { fromHour: number; toHour: number })[] = [

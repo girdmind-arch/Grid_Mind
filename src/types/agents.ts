@@ -56,9 +56,29 @@ export interface Decision {
   /** Plain-language answer to "Why did you do that?" */
   explanation: string;
   usedMemory?: { incidentId: string; summary: string };
+  /** Set when this decision responded to a scenario / incident. */
+  incidentId?: string;
   /** High-impact decisions pause for operator approval. */
-  approval?: { status: "pending" | "approved" | "modified" | "rejected"; risk: string };
+  approval?: Approval;
 }
+
+export type ApprovalStatus = "pending" | "approved" | "modified" | "rejected";
+
+export interface Approval {
+  status: ApprovalStatus;
+  /** What the agent wants to do, in one line. */
+  request: string;
+  risk: string;
+  /** Options the operator can pick from when choosing "Modify". */
+  modifyOptions?: { id: string; label: string }[];
+  /** Filled in once the operator responds. */
+  response?: { optionId?: string; note: string; at: ISODate };
+}
+
+export type ApprovalResponse =
+  | { decision: "approve" }
+  | { decision: "modify"; optionId: string }
+  | { decision: "reject" };
 
 export interface GoalAck {
   goal: string;

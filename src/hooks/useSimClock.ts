@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
-import { useAppStore } from "@/store/appStore";
+import { simNow } from "@/utils/simTime";
 
-/** Current simulated time. Runs at real speed from the demo start (17:20 IST). */
+/** Current simulated time, re-rendering every `tickMs`. Starts at 17:20 IST. */
 export function useSimClock(tickMs = 1000) {
-  const simStartMs = useAppStore((s) => s.simStartMs);
-  const realStartMs = useAppStore((s) => s.realStartMs);
-  const [now, setNow] = useState(() => new Date(simStartMs + (Date.now() - realStartMs)));
+  const [now, setNow] = useState(simNow);
 
   useEffect(() => {
-    const tick = () => setNow(new Date(simStartMs + (Date.now() - realStartMs)));
-    const id = window.setInterval(tick, tickMs);
+    const id = window.setInterval(() => setNow(simNow()), tickMs);
     return () => window.clearInterval(id);
-  }, [simStartMs, realStartMs, tickMs]);
+  }, [tickMs]);
 
   return now;
 }

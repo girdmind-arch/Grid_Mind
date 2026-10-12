@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from "react";
+import type { ComponentPropsWithRef, HTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/utils/cn";
 
@@ -26,7 +26,8 @@ const cardVariants = cva("rounded-lg border", {
   defaultVariants: { variant: "default", interactive: false, padding: "md" },
 });
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardVariants> {}
+// ComponentPropsWithRef: React 19 passes `ref` as a normal prop.
+export interface CardProps extends ComponentPropsWithRef<"div">, VariantProps<typeof cardVariants> {}
 
 export function Card({ className, variant, interactive, padding, ...props }: CardProps) {
   return <div className={cn(cardVariants({ variant, interactive, padding }), className)} {...props} />;

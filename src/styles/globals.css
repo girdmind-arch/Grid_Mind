@@ -170,6 +170,14 @@ html.theme-transition *::after {
   from { transform: translateY(0); }
   to { transform: translateY(100%); }
 }
+/* Moving dashes along power-flow lines (direction of energy). */
+@keyframes flow {
+  to { stroke-dashoffset: -16; }
+}
+.power-flow {
+  animation: flow 0.9s linear infinite;
+}
+
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.45; }
