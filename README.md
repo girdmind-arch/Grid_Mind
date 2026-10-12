@@ -1,1 +1,184 @@
-# Grid_Mind
+# GridMind
+
+**A control room that thinks, acts, and explains.**
+
+GridMind is an agentic-AI system that manages a simulated campus microgrid: solar, a 2 MWh battery, the main grid, 4 hostels, 2 labs, a library and an admin block. AI agents forecast demand, build plans, test them in a digital twin, act within hard safety rules, explain their reasoning, and learn from every incident.
+
+This repository holds the **website** (landing page at `/`), the **Control Room app** (`/app/*`) and the **FastAPI backend** (`backend/`: grid simulator, digital twin, forecaster, agent loop, memory, evaluation). It was built for **BITSETGO'26 (Agentic AI & ML)**. Without the backend, the website still runs on built-in demo data.
+
+> Everything shown is a simulated campus calibrated on public data. No real grid is controlled.
+
+## Quick start
+
+Requirements: Node.js 20.19+ or 22.12+ (required by Vite).
+
+```bash
+git clone https://github.com/girdmind-arch/Grid_Mind.git
+cd Grid_Mind
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. The landing page is at `/`, the Control Room at `/app`.
+
+### Run with the backend (everything live)
+
+Requirements: Python 3.11+.
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn gridmind.main:app --reload --port 8000
+```
+
+Then, in another terminal at the repo root, run `VITE_API_URL=http://localhost:8000 npm run dev`. Or build once with `VITE_API_URL=/ npm run build`, and the backend serves the whole site at http://localhost:8000.
+
+Backend tests: `cd backend && pip install pytest httpx && python -m pytest`.
+
+### Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Starts the dev server at http://localhost:5173 |
+| `npm run build` | Type-checks and builds the production site into `dist/` |
+| `npm run preview` | Serves the built `dist/` locally |
+| `npm run lint` | Type-check only |
+
+## Deploying
+
+**Railway (website + backend, one service).** The root `Dockerfile` builds the website with `VITE_API_URL=/` and runs the FastAPI backend, which serves both the API and the site on `$PORT`. `railway.json` tells Railway to use the Dockerfile and to check `/api/health`. Connect the repo to a Railway service and it deploys on every push. The same Dockerfile works on any Docker host.
+
+**GitHub Pages (free, demo data only).** `.github/workflows/deploy-pages.yml` builds the site and publishes it to https://girdmind-arch.github.io/Grid_Mind/ on every push to `main`, or on demand from the Actions tab.
+
+- One-time setup: in the repo, go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
+- The workflow builds with `BASE_PATH=/Grid_Mind/` because Pages serves the site from a sub-folder. It copies `index.html` to `404.html`, so deep links such as `/Grid_Mind/app/results` still open the app.
+
+**Any static host** (Netlify, Vercel, Cloudflare Pages), demo data only. Build with `npm run build` and serve `dist/`, with every unknown path falling back to `index.html`. No `BASE_PATH` is needed at a domain root.
+
+## What's inside
+
+| Route | Page | What it shows |
+| --- | --- | --- |
+| `/` | Landing | What GridMind is, how it works, the agents, a results teaser |
+| `/app` | Control Room | Live grid diagram, agent thought trace, operator goal, today's cost |
+| `/app/agents` | Agents | The seven agents, their live status, the decision loop, guardrails |
+| `/app/scenarios` | Scenarios | Inject a fault (cloud cover, heatwave, line failure, grid outage), watch the response, replay it |
+| `/app/memory` | Memory | Every incident handled and the lessons learned from it |
+| `/app/results` | Results | GridMind vs. a no-AI baseline: cost, peak, recovery, run-by-run learning, Save as PDF |
+| `/app/settings` | Settings | Operating mode (AI / Fallback / Manual), goal presets, guardrails, theme |
+
+Light, Dark and System themes are supported everywhere (System follows the device live).
+
+## Folder structure
+
+```text
+src/
+├── components/   ui (generic building blocks), layout (app shell), grid, agents,
+│                 control-room, scenarios, memory, results, settings, landing
+├── pages/        Landing, ControlRoom, Agents, Scenarios, Memory, Results, Settings
+├── styles/       tokens.css (all colors, light + dark), globals.css (Tailwind mapping)
+├── hooks/        useTheme, useService, useCountUp, useMediaQuery, ...
+├── services/     the ONLY place pages get data from (mock today, FastAPI later)
+│   ├── index.ts  every service function + its backend endpoint
+│   ├── api.ts    HTTP helper; switches mock ↔ backend via VITE_API_URL
+│   └── mock/     demo data, each file marked // MOCK:
+├── store/        small shared app state (zustand): mode, goal, scenario loop, toasts
+├── types/        shared TypeScript types (the API contract)
+└── utils/        helpers: cn, formatters, simulated clock, print
+
+backend/
+├── gridmind/
+│   ├── campus.py      buildings, feeders, battery, tariff, daily demand and solar profiles
+│   ├── simulator.py   grid physics: one balanced step (solar + battery + grid = demand)
+│   ├── grid.py        the live grid: simulated clock, faults, current control policy
+│   ├── agents.py      Commander loop: Plan A vs Plan B in the twin, Guardrail checks, explanations
+│   ├── forecast.py    the Forecaster: next 12 hours and notable events
+│   ├── memory.py      incidents and lessons
+│   ├── evaluation.py  Results: 5 simulated weekdays, GridMind vs no AI
+│   └── main.py        FastAPI routes; also serves the built website
+└── tests/             API contract tests (pytest)
+```
+
+Project rules for contributors (design, theme tokens, data flow) are in [`CLAUDE.md`](CLAUDE.md).
+
+## How the backend works
+
+- **Grid simulator.** Every simulated minute, building loads follow a hot-weekday profile. Solar follows the clear-sky curve (cut by clouds in a cloud-cover scenario), and the battery and grid make up the rest. Faults really change the grid: a line failure takes a hostel off its feeder, and a grid outage islands the campus.
+- **Digital twin and planning.** For each situation the Commander builds Plan A and Plan B and simulates both up to 22:00. The battery's evening import cap is sized by binary search in the twin. Each result is checked against the six guardrails (labs powered, battery 20–90%, feeders ≤ 90%, import ≤ 1,600 kW, hostel comfort, approval for high-impact actions). The passing plan with the best score for the operator's goal wins. The score adds cost, a comfort penalty, and a value-of-lost-load charge for any building left dark.
+- **Goals.** Goal text changes the planner: "storm" keeps a 60% battery reserve, "battery health" 40%, "comfort" protects hostel cooling, and "cost" accepts small comfort trade-offs.
+- **Memory and learning.** Each incident is stored with what was done. Run 1 of a scenario writes a lesson, and replays reuse it, which shortens detection and analysis in the response-time model.
+- **Results.** Five weekdays with different weather are simulated minute by minute, with GridMind and with no AI (battery idle, no load management). Daily cost includes energy, contract-limit penalties, a demand charge on the highest import, and the off-peak cost of refilling the battery.
+- **Explanations** are plain-language templates filled with the computed numbers. No external AI service is called.
+
+All model values (tariff, profiles, battery size, demand charge, response times) are illustrative assumptions documented in `backend/gridmind/campus.py` and `agents.py`.
+
+## Connecting the website to a backend
+
+Pages never import mock data. They call functions in `src/services/index.ts`, and each function either returns mock data or calls the backend:
+
+1. Copy `.env.example` to `.env.local` and set the backend URL:
+   ```bash
+   VITE_API_URL=http://localhost:8000
+   ```
+   Use `VITE_API_URL=/` when the backend serves the website itself (as in the Docker image).
+2. Restart `npm run dev`. Every service now calls the backend instead of the mocks.
+3. The backend returns JSON matching the types in `src/types/` (`grid.ts`, `agents.ts`).
+
+If the backend is unreachable or returns an error, the UI shows a calm message ("Safe rule-based control is active") instead of crashing.
+
+### Endpoints the frontend expects
+
+`backend/gridmind/main.py` implements all of them. If the paths change, update them in one place: `src/services/index.ts`.
+
+| Service function | Method & path | Returns |
+| --- | --- | --- |
+| `getGridState()` | `GET /api/grid/state` | `GridState` |
+| `getForecast()` | `GET /api/forecast` | `Forecast` |
+| `injectFault(req)` | `POST /api/scenarios/inject` | `FaultResult` |
+| `clearScenario()` | `POST /api/scenarios/clear` | — |
+| `runCommanderStep()` | `POST /api/agents/commander/step` | `Decision` |
+| `respondToApproval(decision, response)` | `POST /api/agents/decisions/{id}/approval` | `Decision` |
+| `getThoughtTrace()` | `GET /api/agents/trace` | `Decision[]` |
+| `getAgents()` | `GET /api/agents` | `Agent[]` |
+| `getGuardrails()` | `GET /api/guardrails` | `GuardrailRule[]` |
+| `getIncidentMemory()` | `GET /api/memory` | `IncidentMemory` |
+| `getResults()` | `GET /api/results` | `Results` |
+| `getRunHistory()` | `GET /api/results/runs` | `ScenarioRunHistory[]` |
+| `setGoal(goal)` | `POST /api/goal` | `GoalAck` |
+| `setControlMode(mode)` | `POST /api/control/mode` | `ControlModeAck` |
+
+**Never put API keys in the frontend.** Anything secret (LLM keys, weather API keys) belongs in the backend.
+
+### Known limits
+
+- **Memory is in-memory.** Incidents and lessons reset when the backend restarts. Add a database to keep them.
+- **One shared campus.** Everyone who opens the site sees and controls the same simulated grid.
+- **The demo evening loops.** The simulated clock starts at 17:20 IST on 12 May 2026 and starts the evening again after 4 hours. The website syncs its clock from `/api/grid/state`.
+- **Mode and goal on reload.** The website's top bar resets to AI Control and the Balanced goal on reload, even though the backend keeps the last choice. Adding `GET /api/control/mode` and `GET /api/goal` would fix this.
+
+## Campus data
+
+A mid-sized Indian campus on a hot May evening: UPPCL-style tariff slabs (peak ₹9.70/kWh from 18:00 to 22:00, off-peak ₹6.90/kWh overnight), solar peaking at midday, and an evening demand peak of about 1,510 kW at 19:00.
+
+The backend's evaluation gives **5.4% lower daily cost, 26.5% lower peak grid import, and 2.6 vs 14 min fault recovery** compared with no AI. The offline demo data in `src/services/mock/results.ts` is a snapshot of that output, so both modes show the same figures. Regenerate it if the simulation changes.
+
+## Judge demo script (about 3 minutes)
+
+1. **Control Room** (`/app`). "This is the campus right now: solar, battery, grid, and eight buildings. The agents are preparing for the 18:00 peak." Point at the thought trace: Observe → Reason → Plan A vs Plan B → Safety check → Act.
+2. **Break something.** Go to **Scenarios** and click **Try a line failure**. Watch the Fault Responder isolate the feeder, the Planner test a reroute in the digital twin, and the Guardrail check it before anything is switched.
+3. **Replay.** Click **Replay same scenario**. The agents reuse the lesson from the first run and recover faster. The learning panel shows run 1 vs run 2 against the no-AI baseline.
+   Optional: run **Grid Outage** to show a high-impact plan pausing for the operator's approval.
+4. **Memory** (`/app/memory`). The incident you just ran is at the top of the timeline, with the lesson it produced.
+5. **Results** (`/app/results`). Close on the three numbers: **5.4% lower cost, 26.5% lower peak, 2.6 min vs 14 min recovery**. Pick **Line Failure** under "Better with every run" to show the improvement, and use **Save as PDF** to hand the judges a copy.
+
+Tip: press the theme toggle in the top bar if the projector washes out Light mode.
+
+## Tech stack
+
+Website: React 19, TypeScript, Vite, Tailwind CSS v4 (token-based theming), React Router, Zustand, Recharts, Framer Motion, Radix UI primitives, Lucide icons, Plus Jakarta Sans and JetBrains Mono.
+Backend: Python, FastAPI, Uvicorn, Pydantic.
+
+## Team
+
+Built for BITSETGO'26. Team names and roles to be added.

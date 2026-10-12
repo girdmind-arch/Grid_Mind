@@ -1,4 +1,4 @@
-import type { FaultType, ISODate } from "./grid";
+import type { ControlMode, FaultType, ISODate } from "./grid";
 
 export type AgentId =
   | "commander"
@@ -102,6 +102,13 @@ export type ApprovalResponse =
   | { decision: "modify"; optionId: string }
   | { decision: "reject" };
 
+export interface ControlModeAck {
+  mode: ControlMode;
+  changedAt: ISODate;
+  /** What changes now, in plain words. */
+  message: string;
+}
+
 export interface GoalAck {
   goal: string;
   interpretation: string;
@@ -150,4 +157,11 @@ export interface Results {
   peak: ResultsSeriesPoint[]; // kW per hour
   recovery: ResultsSeriesPoint[]; // minutes per scenario
   runs: { run: 1 | 2 | 3; recoveryMin: number; costSavedPct: number }[];
+}
+
+/** Recovery time for every evaluation run of one scenario (Results, run-by-run view). */
+export interface ScenarioRunHistory {
+  type: FaultType;
+  baselineMin: number;
+  runs: { run: number; recoveryMin: number; lessonApplied?: string }[];
 }

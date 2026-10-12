@@ -14,7 +14,7 @@ export function AppShell() {
   const outlet = useOutlet();
 
   return (
-    <div className="min-h-dvh bg-bg">
+    <div className="min-h-dvh bg-bg print:bg-surface">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:rounded-md focus:bg-surface-raised focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-fg focus:shadow-lg"
@@ -22,12 +22,12 @@ export function AppShell() {
         Skip to content
       </a>
       <Sidebar />
-      <div className="lg:pl-[var(--sidebar-w)]">
+      <div className="lg:pl-[var(--sidebar-w)] print:pl-0">
         <TopBar />
         <main
           id="main"
           tabIndex={-1}
-          className="mx-auto max-w-[var(--content-max)] px-[var(--gutter)] pt-6 pb-[calc(var(--bottomnav-h)+32px)] focus:outline-none sm:pt-8 lg:px-[var(--gutter-lg)] lg:pb-12"
+          className="mx-auto max-w-[var(--content-max)] px-[var(--gutter)] pt-6 pb-[calc(var(--bottomnav-h)+32px)] focus:outline-none sm:pt-8 lg:px-[var(--gutter-lg)] lg:pb-12 print:max-w-none print:p-0"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

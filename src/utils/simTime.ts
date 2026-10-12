@@ -5,8 +5,16 @@
 /** Simulated "now" when the app opens: Tue 12 May 2026, 17:20 IST. */
 export const SIM_START = "2026-05-12T17:20:00+05:30";
 
-const simStartMs = new Date(SIM_START).getTime();
-const realStartMs = Date.now();
+let simStartMs = new Date(SIM_START).getTime();
+let realStartMs = Date.now();
 
 /** Current simulated time. */
 export const simNow = () => new Date(simStartMs + (Date.now() - realStartMs));
+
+/** Aligns the clock with the backend's simulation time (called on each grid update). */
+export function syncSimClock(iso: string) {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return;
+  simStartMs = t;
+  realStartMs = Date.now();
+}
