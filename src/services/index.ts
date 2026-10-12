@@ -6,12 +6,13 @@
 // in one place if the backend team picks different ones.
 
 import type { FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
-import type { ApprovalResponse, Decision, GoalAck, IncidentMemory, Results } from "@/types/agents";
+import type { Agent, ApprovalResponse, Decision, GoalAck, GuardrailRule, IncidentMemory, Results } from "@/types/agents";
 import { USE_MOCKS, mockDelay, request } from "./api";
 import { applyApproval, buildGridState, clearFault, currentFault, mitigateFault, runInfo, startFault } from "./mock/state";
 import { buildForecast } from "./mock/forecast";
 import { DECISIONS, LEARNING, SCENARIO_DECISIONS } from "./mock/agents";
 import { MEMORY } from "./mock/memory";
+import { AGENTS, GUARDRAILS } from "./mock/agentRoster";
 import { RESULTS } from "./mock/results";
 import { simNow } from "@/utils/simTime";
 
@@ -195,6 +196,22 @@ export async function setGoal(goal: string): Promise<GoalAck> {
     interpretation: `Understood. I'll prioritise "${goal}" while labs keep full power and the battery stays between 20% and 90%.`,
     acceptedAt: simNow().toISOString(),
   };
+}
+
+/** The seven agents, their roles and tools. */
+export async function getAgents(): Promise<Agent[]> {
+  if (!USE_MOCKS) return request<Agent[]>("/api/agents");
+  // MOCK: static roster; live status comes from the thought trace.
+  await mockDelay(300);
+  return AGENTS;
+}
+
+/** Hard rules the agents cannot override. */
+export async function getGuardrails(): Promise<GuardrailRule[]> {
+  if (!USE_MOCKS) return request<GuardrailRule[]>("/api/guardrails");
+  // MOCK: fixed rule set.
+  await mockDelay(200);
+  return GUARDRAILS;
 }
 
 export { ServiceError, USE_MOCKS } from "./api";

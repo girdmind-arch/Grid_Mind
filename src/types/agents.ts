@@ -9,7 +9,7 @@ export type AgentId =
   | "critic"
   | "guardrail";
 
-export type AgentStatus = "idle" | "thinking" | "acting";
+export type AgentStatus = "idle" | "thinking" | "acting" | "waiting";
 
 export interface Agent {
   id: AgentId;
@@ -18,6 +18,13 @@ export interface Agent {
   status: AgentStatus;
   lastAction: string;
   tools: string[];
+}
+
+/** A hard rule the agents cannot override. */
+export interface GuardrailRule {
+  id: string;
+  rule: string;
+  why: string;
 }
 
 // ---------- Thought trace ----------

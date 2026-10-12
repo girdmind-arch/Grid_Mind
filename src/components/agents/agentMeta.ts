@@ -1,5 +1,6 @@
-import { BrainCircuit, CircleCheckBig, Eye, GitCompareArrows, Play, ShieldCheck } from "lucide-react";
-import type { AgentId, TraceStepKind } from "@/types/agents";
+import { Boxes, BrainCircuit, Building, ChartSpline, CircleCheckBig, ClipboardCheck, Crown, Eye, GitCompareArrows, Play, ShieldCheck, Siren } from "lucide-react";
+import type { IconTileTone } from "@/components/ui/IconTile";
+import type { AgentId, AgentStatus, TraceStepKind } from "@/types/agents";
 
 export const AGENT_NAMES: Record<AgentId, string> = {
   commander: "Commander",
@@ -19,4 +20,22 @@ export const STEP_META: Record<TraceStepKind, { label: string; icon: typeof Eye 
   safety: { label: "Safety check", icon: ShieldCheck },
   act: { label: "Act", icon: Play },
   result: { label: "Result", icon: CircleCheckBig },
+};
+
+/** Icon and tint per agent, used everywhere an agent appears. */
+export const AGENT_LOOK: Record<AgentId, { icon: typeof Eye; tone: IconTileTone }> = {
+  commander: { icon: Crown, tone: "ai" },
+  forecaster: { icon: ChartSpline, tone: "solar" },
+  zone: { icon: Building, tone: "accent" },
+  planner: { icon: Boxes, tone: "ai" },
+  fault: { icon: Siren, tone: "danger" },
+  critic: { icon: ClipboardCheck, tone: "success" },
+  guardrail: { icon: ShieldCheck, tone: "success" },
+};
+
+export const STATUS_LOOK: Record<AgentStatus, { label: string; tone: "neutral" | "ai" | "accent" | "warning" }> = {
+  idle: { label: "Idle", tone: "neutral" },
+  thinking: { label: "Thinking", tone: "ai" },
+  acting: { label: "Acting", tone: "accent" },
+  waiting: { label: "Waiting for you", tone: "warning" },
 };
