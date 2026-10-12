@@ -104,11 +104,13 @@ Project rules for contributors (design, theme tokens, data flow) are in [`CLAUDE
 
 ## How the backend works
 
+- **Live clock and weather.** By default the campus runs on real Indian time. Every 15 minutes the backend fetches the real hourly temperature, solar irradiance and cloud cover for the campus location from [Open-Meteo](https://open-meteo.com) (free, no API key). Solar output comes from the irradiance, and cooling load rises and falls with the temperature. At midnight the "cost today" meter resets. If the weather service can't be reached, the backend uses a typical hot-day profile and the top bar says so. **Demo evening** (Settings) restarts the campus at 17:20 with today's weather at 1×, 10× or 60× speed, so judges can watch the evening peak arrive.
+- **Agents that keep watching.** Every few seconds the Commander checks whether time or weather has moved on, and re-plans for the period it is in: recharge at night, hold the battery by day, shave the evening peak. Each re-plan appears in the thought trace, and the website refreshes every 5 seconds.
 - **Grid simulator.** Every simulated minute, building loads follow a hot-weekday profile. Solar follows the clear-sky curve (cut by clouds in a cloud-cover scenario), and the battery and grid make up the rest. Faults really change the grid: a line failure takes a hostel off its feeder, and a grid outage islands the campus.
 - **Digital twin and planning.** For each situation the Commander builds Plan A and Plan B and simulates both up to 22:00. The battery's evening import cap is sized by binary search in the twin. Each result is checked against the six guardrails (labs powered, battery 20–90%, feeders ≤ 90%, import ≤ 1,600 kW, hostel comfort, approval for high-impact actions). The passing plan with the best score for the operator's goal wins. The score adds cost, a comfort penalty, and a value-of-lost-load charge for any building left dark.
 - **Goals.** Goal text changes the planner: "storm" keeps a 60% battery reserve, "battery health" 40%, "comfort" protects hostel cooling, and "cost" accepts small comfort trade-offs.
 - **Memory and learning.** Each incident is stored with what was done. Run 1 of a scenario writes a lesson, and replays reuse it, which shortens detection and analysis in the response-time model.
-- **Results.** Five weekdays with different weather are simulated minute by minute, with GridMind and with no AI (battery idle, no load management). Daily cost includes energy, contract-limit penalties, a demand charge on the highest import, and the off-peak cost of refilling the battery.
+- **Results and what-if.** Five weekdays with different weather are simulated minute by minute, with GridMind and with no AI (battery idle, no load management). Daily cost includes energy, contract-limit penalties, a demand charge on the highest import, and the off-peak cost of refilling the battery. On the Results page, the what-if panel re-runs all five days with a different battery size, solar array, peak tariff or temperature (`POST /api/results/whatif`).
 - **Explanations** are plain-language templates filled with the computed numbers. No external AI service is called.
 
 All model values (tariff, profiles, battery size, demand charge, response times) are illustrative assumptions documented in `backend/gridmind/campus.py` and `agents.py`.
@@ -147,6 +149,11 @@ If the backend is unreachable or returns an error, the UI shows a calm message (
 | `getRunHistory()` | `GET /api/results/runs` | `ScenarioRunHistory[]` |
 | `setGoal(goal)` | `POST /api/goal` | `GoalAck` |
 | `setControlMode(mode)` | `POST /api/control/mode` | `ControlModeAck` |
+| `getControl()` | `GET /api/control` | `ControlState` (mode and goal after a reload) |
+| `setSimulation(clock, speed)` | `POST /api/sim` | `Environment` |
+| `runWhatIf(settings)` | `POST /api/results/whatif` | `Results` |
+
+Backend settings (environment variables): `CAMPUS_LAT`, `CAMPUS_LON` and `CAMPUS_NAME` set the weather location (default Lucknow). `GRIDMIND_CLOCK=demo` starts in demo mode. `GRIDMIND_OFFLINE=1` skips the weather fetch.
 
 **Never put API keys in the frontend.** Anything secret (LLM keys, weather API keys) belongs in the backend.
 
@@ -154,8 +161,7 @@ If the backend is unreachable or returns an error, the UI shows a calm message (
 
 - **Memory is in-memory.** Incidents and lessons reset when the backend restarts. Add a database to keep them.
 - **One shared campus.** Everyone who opens the site sees and controls the same simulated grid.
-- **The demo evening loops.** The simulated clock starts at 17:20 IST on 12 May 2026 and starts the evening again after 4 hours. The website syncs its clock from `/api/grid/state`.
-- **Mode and goal on reload.** The website's top bar resets to AI Control and the Balanced goal on reload, even though the backend keeps the last choice. Adding `GET /api/control/mode` and `GET /api/goal` would fix this.
+- **The campus model is a simulation.** Weather is real, but building loads, the battery and the feeders are modelled. No real meters are connected.
 
 ## Campus data
 

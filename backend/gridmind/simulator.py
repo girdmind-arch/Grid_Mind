@@ -7,9 +7,13 @@ solar + battery + grid = demand (minus any load that could not be served).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 
 from . import campus as c
+
+# Cooling load rises ~2.5% per °C above the temperature the profile was built for.
+COOLING_PER_DEG = 0.025
 
 
 @dataclass
@@ -21,6 +25,33 @@ class Conditions:
     heat_severity: int = 0  # heatwave severity 0-5
     outage: bool = False  # main grid supply lost
     line_fault_zone: str | None = None  # building whose feeder tripped
+    # Live weather: sim hour -> (solar kW from irradiance, temperature °C). None = typical profile.
+    weather: Callable[[float], tuple[float, float]] | None = None
+    # What-if settings (None = the campus defaults).
+    battery_kwh: float | None = None
+    solar_scale: float = 1.0
+    temp_offset_c: float = 0.0
+    peak_rate: float | None = None
+
+    @property
+    def capacity_kwh(self) -> float:
+        return self.battery_kwh if self.battery_kwh is not None else c.BATTERY_CAPACITY_KWH
+
+    def solar_and_temp(self, hour: float) -> tuple[float, float]:
+        """Available (pre-fault) solar and outdoor temperature at a sim hour."""
+        from .weather import reference_temp_c
+
+        if self.weather is not None:
+            solar, temp = self.weather(hour)
+        else:
+            solar, temp = c.clear_sky_solar_kw(hour), reference_temp_c(hour)
+        return solar * self.solar_scale, temp + self.temp_offset_c
+
+    def rate(self, hour: float) -> float:
+        slab = c.tariff_at(hour)
+        if slab.slab == "peak" and self.peak_rate is not None:
+            return self.peak_rate
+        return slab.rate
 
 
 @dataclass
@@ -104,10 +135,17 @@ REQUEST_POLICY = Policy(ai=True, night_charge_to_pct=None, reroute_fraction=1.0,
 
 
 def zone_loads(hour: float, cond: Conditions, pol: Policy) -> list[ZoneLoad]:
+    from .weather import reference_temp_c
+
     h = hour % 24
+    _, temp = cond.solar_and_temp(hour)
+    # Hotter or cooler than the profile's typical day changes the cooling load.
+    temp_factor = min(1.4, max(0.7, 1 + COOLING_PER_DEG * (temp - reference_temp_c(h))))
     out: list[ZoneLoad] = []
     for z in c.ZONES:
         kw = c.zone_baseline_kw(z, h) * cond.demand_factor
+        if z.kind in HVAC_KINDS:
+            kw *= temp_factor
         status, note = "normal", None
 
         if cond.heat_severity:
@@ -155,15 +193,17 @@ def feeder_loads(zones: list[ZoneLoad], cond: Conditions) -> dict[str, float]:
 
 def step(bat: Battery, tot: Totals, hour: float, dt_h: float, cond: Conditions, pol: Policy) -> StepResult:
     h = hour % 24
-    zones = zone_loads(h, cond, pol)
+    zones = zone_loads(hour, cond, pol)
     demand = sum(z.kw for z in zones)
-    clear_solar = c.clear_sky_solar_kw(h)
+    clear_solar, _ = cond.solar_and_temp(hour)
     solar = clear_solar * cond.solar_factor
     net = demand - solar  # what battery + grid must supply
+    cap_kwh = cond.capacity_kwh
 
-    usable_kwh = max(0.0, (bat.soc_pct - pol.reserve_floor_pct) / 100 * c.BATTERY_CAPACITY_KWH)
-    room_kwh = max(0.0, (c.BATTERY_CEIL_PCT - bat.soc_pct) / 100 * c.BATTERY_CAPACITY_KWH)
-    max_out = min(c.BATTERY_MAX_KW, usable_kwh * c.BATTERY_EFF / dt_h) if dt_h > 0 else 0.0
+    usable_kwh = max(0.0, (bat.soc_pct - pol.reserve_floor_pct) / 100 * cap_kwh)
+    room_kwh = max(0.0, (c.BATTERY_CEIL_PCT - bat.soc_pct) / 100 * cap_kwh)
+    max_kw = c.BATTERY_MAX_KW * min(1.0, cap_kwh / c.BATTERY_CAPACITY_KWH) if cap_kwh > 0 else 0.0
+    max_out = min(max_kw, usable_kwh * c.BATTERY_EFF / dt_h) if dt_h > 0 else 0.0
 
     battery = 0.0
     if cond.outage:
@@ -187,12 +227,12 @@ def step(bat: Battery, tot: Totals, hour: float, dt_h: float, cond: Conditions, 
     unserved = max(0.0, net - battery) if cond.outage else 0.0
 
     # Battery bookkeeping (efficiency losses both ways).
-    if battery > 0:
-        bat.soc_pct -= battery * dt_h / c.BATTERY_EFF / c.BATTERY_CAPACITY_KWH * 100
-    elif battery < 0:
-        bat.soc_pct += -battery * dt_h * c.BATTERY_EFF / c.BATTERY_CAPACITY_KWH * 100
+    if cap_kwh > 0 and battery > 0:
+        bat.soc_pct -= battery * dt_h / c.BATTERY_EFF / cap_kwh * 100
+    elif cap_kwh > 0 and battery < 0:
+        bat.soc_pct += -battery * dt_h * c.BATTERY_EFF / cap_kwh * 100
 
-    rate = c.tariff_at(h).rate
+    rate = cond.rate(h)
     if grid > 0:
         tot.energy_cost_inr += grid * dt_h * rate
         if grid > c.CONTRACT_LIMIT_KW:
@@ -206,7 +246,7 @@ def step(bat: Battery, tot: Totals, hour: float, dt_h: float, cond: Conditions, 
     if any(z.kw <= 0 and c.ZONE_BY_ID[z.id].kind == "lab" for z in zones):
         tot.labs_unpowered = True
     # Comfort bookkeeping: what each building got vs. what it asked for.
-    asked = zone_loads(h, cond, REQUEST_POLICY)
+    asked = zone_loads(hour, cond, REQUEST_POLICY)
     requested = sum(z.kw for z in asked)
     tot.requested_kwh += requested * dt_h
     tot.dark_kwh += sum(a.kw for a, z in zip(asked, zones) if z.kw <= 0) * dt_h

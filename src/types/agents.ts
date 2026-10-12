@@ -157,6 +157,23 @@ export interface Results {
   peak: ResultsSeriesPoint[]; // kW per hour
   recovery: ResultsSeriesPoint[]; // minutes per scenario
   runs: { run: 1 | 2 | 3; recoveryMin: number; costSavedPct: number }[];
+  /** The campus settings these results were simulated with. */
+  settings?: WhatIfSettings;
+}
+
+/** What-if inputs for re-running the evaluation. */
+export interface WhatIfSettings {
+  batteryKwh: number;
+  solarPct: number;
+  peakRate: number;
+  tempOffsetC: number;
+}
+
+/** Current control state, so a reloaded page shows what the backend is doing. */
+export interface ControlState {
+  mode: ControlMode;
+  goal: string;
+  interpretation: string;
 }
 
 /** Recovery time for every evaluation run of one scenario (Results, run-by-run view). */

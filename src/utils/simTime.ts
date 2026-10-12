@@ -7,14 +7,16 @@ export const SIM_START = "2026-05-12T17:20:00+05:30";
 
 let simStartMs = new Date(SIM_START).getTime();
 let realStartMs = Date.now();
+let speed = 1;
 
 /** Current simulated time. */
-export const simNow = () => new Date(simStartMs + (Date.now() - realStartMs));
+export const simNow = () => new Date(simStartMs + (Date.now() - realStartMs) * speed);
 
-/** Aligns the clock with the backend's simulation time (called on each grid update). */
-export function syncSimClock(iso: string) {
+/** Aligns the clock with the backend's simulation time and speed (called on each grid update). */
+export function syncSimClock(iso: string, simSpeed = 1) {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return;
   simStartMs = t;
   realStartMs = Date.now();
+  speed = simSpeed;
 }

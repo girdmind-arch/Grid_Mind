@@ -2,6 +2,7 @@ import { CalendarClock, IndianRupee, Sunset, TrendingUp, CloudSun } from "lucide
 import type { ForecastEvent } from "@/types/grid";
 import { getForecast } from "@/services";
 import { useService } from "@/hooks/useService";
+import { useScenarioStore } from "@/store/scenarioStore";
 import { Card, ErrorState, IconTile, Skeleton } from "@/components/ui";
 import type { IconTileTone } from "@/components/ui/IconTile";
 import { formatTime } from "@/utils/format";
@@ -15,7 +16,9 @@ const KIND: Record<ForecastEvent["kind"], { icon: typeof Sunset; tone: IconTileT
 
 /** Forecast events coming up in the next hours. */
 export function UpNext({ className }: { className?: string }) {
-  const forecast = useService(getForecast);
+  // Live backend: re-forecast every few seconds as the weather and plan change.
+  const liveTick = useScenarioStore((s) => Math.floor(s.liveTick / 6));
+  const forecast = useService(getForecast, [liveTick]);
 
   return (
     <Card className={className}>

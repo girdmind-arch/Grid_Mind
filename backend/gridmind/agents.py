@@ -14,11 +14,26 @@ import threading
 from dataclasses import dataclass, field, replace
 
 from . import campus as c
-from .grid import Fault, LiveGrid, at_hour, conditions_for, iso
+from .grid import Fault, LiveGrid, iso
 from .memory import Memory
 from .simulator import Conditions, Policy, Totals, best_peak_target, simulate
 
-HORIZON_END = 22.0  # plans are compared up to the end of the evening peak
+# Value of energy left in the battery at the end of a plan (₹/kWh): it will
+# displace peak-rate grid power later. Stops plans looking cheap by draining it.
+STORED_VALUE_INR_PER_KWH = 9.0
+
+
+def horizon_end(start: float) -> float:
+    """Plans run to the end of the current tariff period that matters: 22:00 by day, 06:00 by night."""
+    h = start % 24
+    day = start - h
+    end = day + 22 if 6 <= h < 22 else day + 30 if h >= 22 else day + 6
+    return max(end, start + 0.5)
+
+
+def period_of(hour: float) -> str:
+    h = hour % 24
+    return "night" if (h >= 22 or h < 6) else "day" if h < 14 else "evening"
 # Value of lost load: what leaving a building with no power at all "costs" in the
 # plan score (₹ per kWh not delivered). Standard planning practice; illustrative value.
 VOLL_INR_PER_KWH = 120.0
@@ -133,6 +148,9 @@ class Candidate:
     score: float = 0.0
     checks: list[tuple[str, bool, str]] = field(default_factory=list)
     needs_approval: bool = False
+    start_soc: float = 0.0
+    # The day's highest import is set by the evening peak; only going above it adds demand charge.
+    peak_ref_kw: float = 0.0
 
     @property
     def comfort(self) -> int:
@@ -142,8 +160,11 @@ class Candidate:
 
     @property
     def cost(self) -> float:
-        # Energy + penalties over the horizon + the day's demand charge on peak import.
-        return self.tot.cost_inr + self.tot.max_import_kw * c.DEMAND_CHARGE_INR_PER_KW_DAY
+        # Energy + penalties over the horizon + the day's demand charge on peak import,
+        # minus the value of any change in stored battery energy.
+        stored = (self.end_soc - self.start_soc) / 100 * c.BATTERY_CAPACITY_KWH * STORED_VALUE_INR_PER_KWH
+        demand_kw = max(self.tot.max_import_kw, self.peak_ref_kw)
+        return self.tot.cost_inr + demand_kw * c.DEMAND_CHARGE_INR_PER_KW_DAY - stored
 
     @property
     def passes(self) -> bool:
@@ -160,16 +181,17 @@ class Candidate:
 
 
 def run_twin(grid: LiveGrid, fault: Fault | None, pol: Policy) -> tuple[Totals, float]:
-    """Simulates now -> HORIZON_END. The fault lasts its duration, then clears."""
+    """Simulates now -> end of the period with live weather. The fault lasts its duration, then clears."""
     start = grid.hour()
     soc = grid.battery.soc_pct
-    end = max(HORIZON_END, start + 0.5)
+    end = horizon_end(start)
+    normal_cond = grid.conditions(None)
     if fault:
         fault_end = min(end, start + fault.duration_min / 60)
-        bat, tot1, _ = simulate(start, fault_end, conditions_for(fault), pol, soc, dt_min=2)
+        bat, tot1, _ = simulate(start, fault_end, grid.conditions(fault), pol, soc, dt_min=2)
         if fault_end < end:
             normal = replace(pol, bridge_solar_gap=False, extra_discharge_kw=0.0)
-            bat2, tot2, _ = simulate(fault_end, end, Conditions(), normal, bat.soc_pct, dt_min=2)
+            bat2, tot2, _ = simulate(fault_end, end, normal_cond, normal, bat.soc_pct, dt_min=2)
             merged = Totals(
                 energy_cost_inr=tot1.energy_cost_inr + tot2.energy_cost_inr,
                 penalty_inr=tot1.penalty_inr + tot2.penalty_inr,
@@ -185,7 +207,7 @@ def run_twin(grid: LiveGrid, fault: Fault | None, pol: Policy) -> tuple[Totals, 
             )
             return merged, bat2.soc_pct
         return tot1, bat.soc_pct
-    bat, tot, _ = simulate(start, end, Conditions(), pol, soc, dt_min=2)
+    bat, tot, _ = simulate(start, end, normal_cond, pol, soc, dt_min=2)
     return tot, bat.soc_pct
 
 
@@ -239,6 +261,7 @@ class Commander:
         self.last_incident: dict[str, str] = {}
         self.counter = 140
         self._lock = threading.RLock()
+        self._last_routine: dict | None = None
         self._seed()
 
     # ----- helpers -----
@@ -248,7 +271,10 @@ class Commander:
 
     def _evaluate(self, cands: list[Candidate], fault: Fault | None) -> Candidate:
         floor = self.goal.reserve_floor_pct
+        ref = self.grid.policy.peak_target_kw or 0.0
         for cand in cands:
+            cand.start_soc = self.grid.battery.soc_pct
+            cand.peak_ref_kw = ref
             cand.tot, cand.end_soc = run_twin(self.grid, fault, cand.policy)
             cand.checks = guardrail(cand, fault, floor)
             cand.score = score(cand, self.goal)
@@ -297,76 +323,131 @@ class Commander:
 
     # ----- seed trace -----
     def _seed(self):
-        """The decision the agents made just before the demo opens, computed for real."""
-        self.decisions.append(self._peak_decision(started_hour=self.grid.hour() - 8 / 60, apply=True))
+        """The decision the agents made just before the page opened, computed for real."""
+        self.decisions.append(self._routine_decision(started_hour=self.grid.hour() - 8 / 60))
 
-    # ----- situations -----
-    def _peak_decision(self, started_hour: float | None = None, apply: bool = True) -> dict:
+    # ----- routine operation (no fault) -----
+    def _evening_peak(self) -> tuple[float, float]:
+        """(kW, hour) of the next evening peak, from the live weather forecast."""
+        from .simulator import zone_loads
+
         g = self.grid
-        h = g.hour() if started_hour is None else started_hour
+        now = g.hour()
+        day = now - (now % 24)
+        start = day + 17 if now % 24 < 22 else day + 41
+        cond = g.conditions(None)
+        best = (0.0, start)
+        t = max(start, now)
+        while t <= start + 5:
+            kw = sum(z.kw for z in zone_loads(t, cond, Policy.baseline()))
+            if kw > best[0]:
+                best = (kw, t)
+            t += 0.5
+        return best
+
+    def _observe_weather(self) -> str:
+        env = self.grid.environment()
+        solar = fmt_kw(self.grid.snapshot().solar_kw)
+        battery = f"Battery at {round(self.grid.battery.soc_pct)}%."
+        if env["weatherSource"] == "open-meteo":
+            cloud = f", {env['cloudPct']}% cloud" if env["cloudPct"] else ""
+            return f"Live weather: {env['temperatureC']:.0f}°C in {env['location']}{cloud}. Solar {solar}. {battery}"
+        return f"Typical hot day ({env['temperatureC']:.0f}°C; live weather unavailable). Solar {solar}. {battery}"
+
+    def _routine_decision(self, started_hour: float | None = None, apply: bool = True) -> dict:
+        g = self.grid
+        now = g.hour()
+        h = now if started_hour is None else started_hour
+        period = period_of(now)
         base_pol = replace(g.default_policy(), reserve_floor_pct=self.goal.reserve_floor_pct)
-        target = best_peak_target(g.hour(), Conditions(), base_pol, g.battery.soc_pct)
-        a = Candidate(
-            "A", "Import from grid", "Keep the battery idle and buy grid power through the peak.",
-            ["Battery idle", "Grid covers the evening peak"],
-            replace(base_pol, peak_target_kw=None, precool=False),
-        )
-        b = Candidate(
-            "B", "Shift to battery at peak",
-            f"Cap grid import at {fmt_kw(target)} from 17:00 to 22:00 using the battery; pre-cool hostels by 1°C.",
-            [f"Discharge battery to hold grid import at {fmt_kw(target)}", "Pre-cool hostels 17:30–18:00", "Recharge at off-peak rates after 22:00"],
-            replace(base_pol, peak_target_kw=target),
-        )
+        g.policy.reserve_floor_pct = self.goal.reserve_floor_pct
+        target = g._evening_target(now, g.battery.soc_pct, g.conditions(None))
+        g.policy.peak_target_kw = target
+        peak_kw, peak_hour = self._evening_peak()
+        peak_at = f"{int(peak_hour % 24):02d}:{int(round((peak_hour % 1) * 60)) % 60:02d}"
+        rate = c.tariff_at(19).rate
+
+        if period == "night":
+            title, trigger = "Recharge at off-peak rates", "Off-peak tariff until 06:00; tomorrow's evening peak needs a full battery."
+            a = Candidate("A", "Skip overnight charging", "Leave the battery as it is until morning.",
+                          ["No charging overnight"], replace(base_pol, night_charge_to_pct=None, peak_target_kw=target))
+            b = Candidate("B", "Charge overnight", f"Charge to 82% at ₹6.90/kWh without pushing import above {fmt_kw(target)}.",
+                          ["Charge battery to 82% before 06:00", f"Keep grid import under {fmt_kw(target)}"],
+                          replace(base_pol, peak_target_kw=target))
+            reason_line = "Off-peak power costs ₹6.90/kWh; the same energy saves ₹9.70/kWh in tomorrow's peak."
+            horizon = "06:00"
+            explain_b = ("Night-time electricity is the cheapest of the day. GridMind charges the battery now, slowly enough "
+                         "not to create a new peak, so it can cover tomorrow evening's expensive hours.")
+        elif period == "day":
+            title, trigger = "Hold the battery for the evening", f"Demand will reach {fmt_kw(peak_kw)} around {peak_at} when power costs ₹{rate:.2f}/kWh."
+            a = Candidate("A", "Use the battery now", "Discharge 300 kW now to cut daytime grid import.",
+                          ["Battery discharge 300 kW now"], replace(base_pol, extra_discharge_kw=300.0, peak_target_kw=target))
+            b = Candidate("B", "Hold for the evening peak", f"Keep the battery charged, then cap import at {fmt_kw(target)} from 17:00.",
+                          ["Hold battery charge until 17:00", f"Cap grid import at {fmt_kw(target)} 17:00–22:00"],
+                          replace(base_pol, peak_target_kw=target))
+            reason_line = f"Daytime power costs ₹8.25/kWh; evening power costs ₹{rate:.2f}/kWh plus the demand charge."
+            horizon = "22:00"
+            explain_b = ("The battery is worth more in the evening, when power is most expensive and the campus hits its "
+                         "daily peak. GridMind keeps it charged during the day and uses solar and the grid for now.")
+        else:
+            title = "Manage the evening peak" if now % 24 >= 17 else "Prepare for the evening peak"
+            trigger = f"Demand will reach {fmt_kw(peak_kw)} around {peak_at} while the tariff is ₹{rate:.2f}/kWh."
+            a = Candidate("A", "Import from grid", "Keep the battery idle and buy grid power through the peak.",
+                          ["Battery idle", "Grid covers the evening peak"], replace(base_pol, peak_target_kw=None, precool=False))
+            b = Candidate("B", "Shift to battery at peak",
+                          f"Cap grid import at {fmt_kw(target)} until 22:00 using the battery; pre-cool hostels by 1°C.",
+                          [f"Discharge battery to hold grid import at {fmt_kw(target)}", "Pre-cool hostels 17:30–18:00",
+                           "Recharge at off-peak rates after 22:00"], replace(base_pol, peak_target_kw=target))
+            reason_line = f"Peak-rate power costs ₹{rate:.2f}/kWh vs ₹6.90 off-peak, and the day's highest import sets the demand charge."
+            horizon = "22:00"
+            explain_b = ("Electricity from the grid is most expensive in the evening, and the campus is charged extra for its "
+                         f"highest import of the day. GridMind uses the battery to keep grid import at about {fmt_kw(target)} "
+                         "and pre-cools hostels slightly earlier. Labs are never touched.")
+
         chosen = self._evaluate([a, b], None)
+        if abs(a.score - b.score) < 100:
+            chosen = b  # a near-tie: keep the planned behaviour rather than flip-flopping
         other = b if chosen is a else a
         if apply:
             g.apply_policy(chosen.policy, mitigated=False)
-        peak = max(c.HOURLY_DEMAND_KW[17:22])
-        peak_hour = 17 + c.HOURLY_DEMAND_KW[17:22].index(peak)
-        rate = c.tariff_at(19).rate
         saving = other.cost - chosen.cost
-        when = iso(at_hour(h))
+        when = iso(g.at(h))
+        self._last_routine = {"period": period, "target": target, "hour": now, "temp": g.environment()["temperatureC"]}
         return {
             "id": self._next_id(),
             "startedAt": when,
-            "title": "Prepare for the evening peak",
-            "trigger": f"Demand will reach {fmt_kw(peak)} at {peak_hour}:00 while the tariff rises to ₹{rate:.2f}/kWh.",
+            "title": title,
+            "trigger": trigger,
             "steps": [
-                {"id": "s1", "kind": "observe", "agent": "forecaster", "at": when,
-                 "summary": f"Peak of {fmt_kw(peak)} expected at {peak_hour}:00. Battery is at {round(g.battery.soc_pct)}%."},
-                {"id": "s2", "kind": "reason", "agent": "commander", "at": when,
-                 "summary": f"Peak-rate power costs ₹{rate:.2f}/kWh vs ₹6.90 off-peak, and the day's highest import sets the demand charge."},
+                {"id": "s1", "kind": "observe", "agent": "forecaster", "at": when, "summary": self._observe_weather(),
+                 "detail": f"Next evening peak: {fmt_kw(peak_kw)} around {peak_at}."},
+                {"id": "s2", "kind": "reason", "agent": "commander", "at": when, "summary": reason_line},
                 {"id": "s3", "kind": "plan", "agent": "planner", "at": when,
-                 "summary": "Tested 2 plans in the digital twin up to 22:00 (18 runs to size the battery cap).",
-                 "detail": f"Lowest import cap the battery can hold until 22:00: {fmt_kw(target)}."},
+                 "summary": f"Tested 2 plans in the digital twin up to {horizon} with the live forecast.",
+                 "detail": f"Plan A: {fmt_inr(a.cost)}, {a.comfort}% comfort. Plan B: {fmt_inr(b.cost)}, {b.comfort}% comfort. "
+                           f"Evening import cap sized at {fmt_kw(target)} (18 twin runs)."},
                 {"id": "s4", "kind": "safety", "agent": "guardrail", "at": when, "summary": self._safety_summary(chosen, other)},
-                {"id": "s5", "kind": "act", "agent": "commander", "at": when,
-                 "summary": f"Plan {chosen.id} active. {chosen.actions[0]}."},
+                {"id": "s5", "kind": "act", "agent": "commander", "at": when, "summary": f"Plan {chosen.id} active. {chosen.actions[0]}."},
                 {"id": "s6", "kind": "result", "agent": "critic", "at": when,
-                 "summary": f"Projected {fmt_inr(saving)} saving tonight vs Plan {other.id}." if saving > 0 else "Both plans cost the same tonight."},
+                 "summary": f"Projected {fmt_inr(saving)} better than Plan {other.id} by {horizon}." if saving > 0 else "Both plans come out about the same."},
             ],
             "plans": [self._plan_json(a), self._plan_json(b)],
             "chosenPlanId": chosen.id,
             "chosenReason": self._reason(chosen, other),
-            "explanation": (
-                "Electricity from the grid is most expensive in the evening, and the campus is charged extra for its "
-                f"highest import of the day. GridMind uses the battery to keep grid import at about {fmt_kw(target)} "
-                "through the evening and pre-cools hostels slightly earlier. Labs are never touched."
-                if chosen.id == "B" else
-                "Using the battery tonight would not pay off under the current goal, so GridMind keeps it in reserve and buys grid power."
-            ),
-            "usedMemory": self.memory.lesson_for("heatwave"),
+            "explanation": explain_b if chosen.id == "B" else
+            "Under the current goal and conditions the alternative did not pay off, so GridMind keeps the simpler plan.",
+            **({"usedMemory": m} if (m := self.memory.lesson_for("heatwave")) and period == "evening" else {}),
         }
 
     def _scenario_candidates(self, fault: Fault, run: int) -> tuple[list[Candidate], str, str, str]:
         g = self.grid
         base = replace(g.policy, reserve_floor_pct=self.goal.reserve_floor_pct, bridge_solar_gap=False, extra_discharge_kw=0.0)
-        cond = conditions_for(fault)
+        cond = g.conditions(fault)
         snap = g.snapshot()
 
         if fault.type == "cloud_cover":
-            gap = c.clear_sky_solar_kw(g.hour()) * (1 - cond.solar_factor)
-            target = best_peak_target(g.hour(), cond, replace(base, bridge_solar_gap=True), g.battery.soc_pct)
+            gap = cond.solar_and_temp(g.hour())[0] * (1 - cond.solar_factor)
+            target = g._evening_target(g.hour(), g.battery.soc_pct, cond)
             cands = [
                 Candidate("A", "Buy the gap from grid", f"Import {fmt_kw(gap)} more until the clouds pass.",
                           [f"Grid import +{fmt_kw(gap)}"], base),
@@ -379,7 +460,7 @@ class Commander:
 
         if fault.type == "heatwave":
             heat = replace(base, precool=True, extra_discharge_kw=150.0)
-            target = best_peak_target(g.hour(), cond, heat, g.battery.soc_pct)
+            target = g._evening_target(g.hour(), g.battery.soc_pct, cond)
             hostel_up = round(0.04 * fault.severity * 100)
             cands = [
                 Candidate("A", "Ride it out on grid", "Import the extra cooling load at peak rates.",
@@ -402,7 +483,7 @@ class Commander:
             frac, spare = 1.0, limit
             h = g.hour()
             while h <= g.hour() + fault.duration_min / 60:
-                loads = {z.id: z.kw for z in zone_loads(h, Conditions(), base)}
+                loads = {z.id: z.kw for z in zone_loads(h, g.conditions(None), base)}
                 others = sum(kw for zid, kw in loads.items() if c.ZONE_BY_ID[zid].feeder == "F2" and zid != zone_id)
                 spare_h = max(0.0, limit - others)
                 spare = min(spare, spare_h)
@@ -442,7 +523,7 @@ class Commander:
         g = self.grid
         start = g.hour()
         soc = g.battery.soc_pct
-        cond = Conditions(outage=True)
+        cond = replace(g.conditions(None), outage=True)
         hrs = 0.0
         from .simulator import Battery, step
 
@@ -569,7 +650,7 @@ class Commander:
                     return existing
                 d = self._scenario_decision(fault)
             else:
-                d = self._peak_decision()
+                d = self._routine_decision()
             self.decisions.insert(0, d)
             del self.decisions[30:]
             return d
@@ -612,11 +693,33 @@ class Commander:
     def set_goal(self, text: str) -> dict:
         with self._lock:
             self.goal = Goal.parse(text)
-            pol = replace(self.grid.policy, reserve_floor_pct=self.goal.reserve_floor_pct)
+            self.grid.apply_policy(replace(self.grid.policy, reserve_floor_pct=self.goal.reserve_floor_pct), mitigated=False)
             if not self.grid.fault:
-                pol.peak_target_kw = best_peak_target(self.grid.hour(), Conditions(), pol, self.grid.battery.soc_pct)
-            self.grid.apply_policy(pol, mitigated=False)
+                # Re-plan straight away under the new goal; the decision shows up in the trace.
+                self.decisions.insert(0, self._routine_decision())
+                del self.decisions[30:]
             return {"goal": self.goal.text, "interpretation": self.goal.interpretation(), "acceptedAt": iso(self.grid.now())}
+
+    def tick(self) -> dict | None:
+        """Called every few seconds: re-plans when time or conditions have moved on."""
+        with self._lock:
+            if self.grid.fault or self.pending:
+                return None
+            now = self.grid.hour()
+            last = self._last_routine
+            new_period = not last or last["period"] != period_of(now) or abs(now - last["hour"]) > 30
+            hourly = last and now - last["hour"] >= 1.0
+            temp_moved = last and abs(self.grid.environment()["temperatureC"] - last["temp"]) >= 1.5
+            if not (new_period or hourly or temp_moved):
+                return None
+            d = self._routine_decision()
+            if last and not new_period and abs(self._last_routine["target"] - last["target"]) < 25 and not temp_moved:
+                # Same plan as before: refresh silently, no new trace entry.
+                self._last_routine["hour"] = now
+                return None
+            self.decisions.insert(0, d)
+            del self.decisions[30:]
+            return d
 
     def agents(self) -> list[dict]:
         roles = {

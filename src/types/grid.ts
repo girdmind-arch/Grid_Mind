@@ -43,6 +43,19 @@ export interface BatteryState {
   capacityKwh: number;
 }
 
+/** Where the live numbers come from (sent by the backend). */
+export interface Environment {
+  clock: "live" | "demo";
+  /** Simulated minutes per real minute (1 in live mode). */
+  speed: number;
+  weatherSource: "open-meteo" | "profile";
+  location: string;
+  temperatureC: number;
+  cloudPct: number;
+  solarPotentialKw: number;
+  weatherUpdatedAt: ISODate | null;
+}
+
 export interface GridState {
   timestamp: ISODate;
   mode: ControlMode;
@@ -58,6 +71,8 @@ export interface GridState {
   zones: Zone[];
   flows: PowerFlow[];
   activeFault: ActiveFault | null;
+  /** Present when the live backend is connected. */
+  environment?: Environment;
 }
 
 // ---------- Forecast ----------
@@ -66,6 +81,7 @@ export interface ForecastPoint {
   demandKw: number;
   solarKw: number;
   tariffInr: number;
+  temperatureC?: number;
 }
 
 export interface ForecastEvent {
