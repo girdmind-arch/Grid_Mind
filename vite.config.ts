@@ -4,6 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
 export default defineConfig({
+  // Served from the domain root by default. GitHub Pages serves this repo at
+  // /Grid_Mind/, so the Pages workflow sets BASE_PATH=/Grid_Mind/.
+  base: process.env.BASE_PATH || "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "src") },

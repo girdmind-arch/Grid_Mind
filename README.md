@@ -30,6 +30,15 @@ Open http://localhost:5173. The landing page is at `/`, the Control Room at `/ap
 | `npm run preview` | Serves the built `dist/` locally |
 | `npm run lint` | Type-check only |
 
+## Deploying
+
+**GitHub Pages (free).** `.github/workflows/deploy-pages.yml` builds the site and publishes it to https://girdmind-arch.github.io/Grid_Mind/ on every push to `main`, or on demand from the Actions tab.
+
+- One-time setup: in the repo, go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
+- The workflow builds with `BASE_PATH=/Grid_Mind/` because Pages serves the site from a sub-folder. It copies `index.html` to `404.html`, so deep links such as `/Grid_Mind/app/results` still open the app.
+
+**Any static host** (Railway, Netlify, Vercel, Cloudflare Pages). Build with `npm run build` and serve `dist/`, with every unknown path falling back to `index.html`. No `BASE_PATH` is needed at a domain root. Railway detects the Vite app and serves it this way automatically.
+
 ## What's inside
 
 | Route | Page | What it shows |

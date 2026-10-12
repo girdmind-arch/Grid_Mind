@@ -32,7 +32,10 @@ const router = createBrowserRouter([
     ],
   },
   { path: "*", element: <NotFound /> },
-]);
+], {
+  // Matches Vite's `base`, so routes work when the site lives in a sub-folder.
+  basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/",
+});
 
 export default function App() {
   return (
