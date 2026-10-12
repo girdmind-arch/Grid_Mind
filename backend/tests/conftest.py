@@ -1,0 +1,7 @@
+# Lets the tests run from the repo root as well as from backend/.
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.environ.setdefault("GRIDMIND_OFFLINE", "1")  # no network calls in tests
+os.environ.setdefault("GRIDMIND_NO_LOOP", "1")  # no background agent loop in tests
