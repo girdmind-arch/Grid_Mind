@@ -50,10 +50,23 @@ export interface Environment {
   speed: number;
   weatherSource: "open-meteo" | "profile";
   location: string;
+  /** Indian state or UT of the campus, and its power company. */
+  state: string;
+  discom: string;
   temperatureC: number;
   cloudPct: number;
   solarPotentialKw: number;
   weatherUpdatedAt: ISODate | null;
+}
+
+/** A campus location in India and the state's (illustrative) time-of-day tariff. */
+export interface CampusLocation {
+  name: string;
+  state: string;
+  lat: number;
+  lon: number;
+  discom: string;
+  tariff: { offPeak: number; normal: number; peak: number };
 }
 
 export interface GridState {

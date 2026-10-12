@@ -26,11 +26,14 @@ from .forecast import build_forecast
 from .grid import LiveGrid, iso
 from .memory import Memory
 from .simulator import Battery, Totals, step
+from .locations import CITIES, search as search_places, tariff_for
 from .weather import Weather
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
 weather = Weather(fetch=True)
+_t = tariff_for(weather.state)
+c.set_tariff(_t.off_peak, _t.normal, _t.peak)
 grid = LiveGrid(weather)
 memory = Memory()
 commander = Commander(grid, memory)
@@ -157,8 +160,15 @@ class ClockBody(BaseModel):
 class WhatIfBody(BaseModel):
     batteryKwh: float = Field(c.BATTERY_CAPACITY_KWH, ge=0, le=6000)
     solarPct: float = Field(100, ge=0, le=300)
-    peakRate: float = Field(c.TARIFF["peak"].rate, ge=5, le=20)
+    peakRate: float | None = Field(None, ge=3, le=25)  # None = the state's own peak rate
     tempOffsetC: float = Field(0, ge=-8, le=8)
+
+
+class LocationBody(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    state: str = Field("", max_length=80)
+    lat: float = Field(ge=6, le=37.5)  # India's latitude range
+    lon: float = Field(ge=68, le=97.5)  # India's longitude range
 
 
 # ---------- API ----------
@@ -244,6 +254,31 @@ def results_runs():
 @app.post("/api/goal")
 def set_goal(body: GoalBody):
     return commander.set_goal(body.goal)
+
+
+@app.get("/api/locations/search")
+def locations_search(q: str = ""):
+    places, source = search_places(q)
+    return {"source": source, "results": [p.to_json() for p in places]}
+
+
+@app.get("/api/location")
+def get_location():
+    s = weather.status()
+    t = tariff_for(s["state"])
+    return {"name": s["location"], "state": s["state"], "lat": s["lat"], "lon": s["lon"], "discom": t.discom,
+            "tariff": {"offPeak": t.off_peak, "normal": t.normal, "peak": t.peak}, "weatherSource": s["source"]}
+
+
+@app.post("/api/location")
+def set_location(body: LocationBody):
+    """Moves the campus: new weather feed, the state's tariff, and the day re-simulated."""
+    t = tariff_for(body.state)
+    c.set_tariff(t.off_peak, t.normal, t.peak)
+    weather.set_location(body.name, body.state, body.lat, body.lon)
+    grid.set_clock(grid.clock_mode, grid.speed)
+    commander.decisions.insert(0, commander._routine_decision())
+    return get_location()
 
 
 @app.get("/api/control")

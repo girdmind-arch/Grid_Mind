@@ -165,6 +165,7 @@ export interface Results {
 export interface WhatIfSettings {
   batteryKwh: number;
   solarPct: number;
+  /** ₹/kWh in the 18:00–22:00 peak (the campus state's rate by default). */
   peakRate: number;
   tempOffsetC: number;
 }

@@ -5,7 +5,7 @@
 // backend instead. Endpoint paths are the proposed contract; adjust them here
 // in one place if the backend team picks different ones.
 
-import type { ControlMode, Environment, FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
+import type { CampusLocation, ControlMode, Environment, FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
 import type { Agent, ApprovalResponse, ControlModeAck, ControlState, Decision, GoalAck, WhatIfSettings, GuardrailRule, IncidentMemory, Results, ScenarioRunHistory } from "@/types/agents";
 import { ServiceError, USE_MOCKS, mockDelay, request } from "./api";
 import { applyApproval, buildGridState, clearFault, currentFault, mitigateFault, runInfo, startFault } from "./mock/state";
@@ -204,6 +204,27 @@ export async function getControl(): Promise<ControlState | null> {
   if (!USE_MOCKS) return request<ControlState>("/api/control");
   // MOCK: nothing to restore; the app keeps its defaults.
   return null;
+}
+
+/** Places in India matching a search (city, town or campus). */
+export async function searchLocations(query: string): Promise<{ source: string; results: CampusLocation[] }> {
+  if (!USE_MOCKS) return request(`/api/locations/search?q=${encodeURIComponent(query)}`);
+  // MOCK: the offline demo has one fixed campus.
+  return { source: "built-in", results: [] };
+}
+
+/** Where the campus is, and its state's tariff. */
+export async function getLocation(): Promise<CampusLocation | null> {
+  if (!USE_MOCKS) return request<CampusLocation>("/api/location");
+  // MOCK: fixed demo campus.
+  return null;
+}
+
+/** Moves the campus: new weather feed, the state's tariff, today re-simulated. */
+export async function setLocation(place: Pick<CampusLocation, "name" | "state" | "lat" | "lon">): Promise<CampusLocation> {
+  if (!USE_MOCKS) return request<CampusLocation>("/api/location", { method: "POST", body: JSON.stringify(place) });
+  // MOCK: not available offline.
+  throw new ServiceError("Changing the location needs the live backend. This copy runs on demo data.");
 }
 
 /** Simulation clock: live (real time and weather) or a sped-up demo evening. */

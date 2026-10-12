@@ -80,6 +80,17 @@ TARIFF = {
 }
 
 
+def set_tariff(off_peak: float, normal: float, peak: float) -> None:
+    """Switches the time-of-day rates (e.g. when the campus moves to another state)."""
+    TARIFF["off-peak"] = TariffSlab("off-peak", off_peak, "Off-peak · 22:00–06:00")
+    TARIFF["normal"] = TariffSlab("normal", normal, "Normal · 06:00–18:00")
+    TARIFF["peak"] = TariffSlab("peak", peak, "Peak · 18:00–22:00")
+
+
+def tariff_key() -> tuple[float, float, float]:
+    return TARIFF["off-peak"].rate, TARIFF["normal"].rate, TARIFF["peak"].rate
+
+
 def tariff_at(hour: float) -> TariffSlab:
     h = hour % 24
     if 18 <= h < 22:

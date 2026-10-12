@@ -240,11 +240,15 @@ class LiveGrid:
             when = self.at(self._hour)
         solar, temp, cloud, live = self.weather.at(when)
         status = self.weather.status()
+        from .locations import tariff_for
+
         return {
             "clock": self.clock_mode,
             "speed": self.speed,
             "weatherSource": status["source"] if live else "profile",
             "location": status["location"],
+            "state": status["state"],
+            "discom": tariff_for(status["state"]).discom,
             "temperatureC": round(temp, 1),
             "cloudPct": round(cloud),
             "solarPotentialKw": round(solar),
