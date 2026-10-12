@@ -6,14 +6,14 @@
 // in one place if the backend team picks different ones.
 
 import type { FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
-import type { Agent, ApprovalResponse, Decision, GoalAck, GuardrailRule, IncidentMemory, Results } from "@/types/agents";
+import type { Agent, ApprovalResponse, Decision, GoalAck, GuardrailRule, IncidentMemory, Results, ScenarioRunHistory } from "@/types/agents";
 import { USE_MOCKS, mockDelay, request } from "./api";
 import { applyApproval, buildGridState, clearFault, currentFault, mitigateFault, runInfo, startFault } from "./mock/state";
 import { buildForecast } from "./mock/forecast";
 import { DECISIONS, LEARNING, SCENARIO_DECISIONS } from "./mock/agents";
 import { MEMORY } from "./mock/memory";
 import { AGENTS, GUARDRAILS } from "./mock/agentRoster";
-import { RESULTS } from "./mock/results";
+import { RESULTS, RUN_HISTORY } from "./mock/results";
 import { simNow } from "@/utils/simTime";
 
 /** Current grid snapshot: sources, battery, zones, flows, cost. */
@@ -185,6 +185,14 @@ export async function getResults(): Promise<Results> {
   // MOCK: evaluation numbers from the simulated campus.
   await mockDelay(350);
   return RESULTS;
+}
+
+/** Recovery time for every evaluation run of each scenario (run 1, 2, 3…). */
+export async function getRunHistory(): Promise<ScenarioRunHistory[]> {
+  if (!USE_MOCKS) return request<ScenarioRunHistory[]>("/api/results/runs");
+  // MOCK: three evaluation runs per scenario from the simulated campus.
+  await mockDelay(300);
+  return RUN_HISTORY;
 }
 
 /** Sets the operator's goal in plain English; the Commander restates how it understood it. */

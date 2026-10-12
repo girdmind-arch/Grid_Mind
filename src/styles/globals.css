@@ -186,3 +186,18 @@ html.theme-transition *::after {
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
+
+/* Printing / "Save as PDF" (Results page). Keep backgrounds such as the hero
+   gradient, and use the page edge instead of the app's padding. */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  body {
+    background: var(--surface);
+  }
+}

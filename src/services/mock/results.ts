@@ -8,7 +8,9 @@
 // - recovery = average of the scenario rows; each row and the runs below
 //   match LEARNING in mock/agents.ts (run 3 = the scenario rows).
 
-import type { Results } from "@/types/agents";
+import type { Results, ScenarioRunHistory } from "@/types/agents";
+import type { FaultType } from "@/types/grid";
+import { LEARNING } from "./agents";
 
 export const RESULTS: Results = {
   dataNote: "Simulated campus calibrated on public data.",
@@ -44,3 +46,21 @@ export const RESULTS: Results = {
     { run: 3, recoveryMin: 2.6, costSavedPct: 18.4 },
   ],
 };
+
+// MOCK: run-by-run recovery for each scenario, from the same LEARNING table the
+// Scenarios page uses, so a replay in the demo lands on the same numbers.
+const RUN_ORDER: FaultType[] = ["cloud_cover", "heatwave", "line_failure", "grid_outage"];
+
+export const RUN_HISTORY: ScenarioRunHistory[] = RUN_ORDER.map((type) => {
+  const l = LEARNING[type];
+  return {
+    type,
+    baselineMin: l.baselineMin,
+    runs: l.recoveryByRun.map((recoveryMin, i) => ({
+      run: i + 1,
+      recoveryMin,
+      // Run 1 learns the lesson; runs 2 and 3 apply it.
+      lessonApplied: i > 0 ? l.lesson : undefined,
+    })),
+  };
+});

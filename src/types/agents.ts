@@ -151,3 +151,10 @@ export interface Results {
   recovery: ResultsSeriesPoint[]; // minutes per scenario
   runs: { run: 1 | 2 | 3; recoveryMin: number; costSavedPct: number }[];
 }
+
+/** Recovery time for every evaluation run of one scenario (Results, run-by-run view). */
+export interface ScenarioRunHistory {
+  type: FaultType;
+  baselineMin: number;
+  runs: { run: number; recoveryMin: number; lessonApplied?: string }[];
+}

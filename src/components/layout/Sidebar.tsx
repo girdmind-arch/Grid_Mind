@@ -7,7 +7,7 @@ import { Logo } from "./Logo";
 /** Desktop sidebar (lg and up). */
 export function Sidebar() {
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-w)] flex-col border-r border-border bg-surface lg:flex">
+    <aside className="print:hidden fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-w)] flex-col border-r border-border bg-surface lg:flex">
       <div className="flex h-[var(--topbar-h)] items-center px-5">
         <Logo to="/app" />
       </div>

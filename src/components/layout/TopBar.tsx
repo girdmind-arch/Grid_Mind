@@ -8,7 +8,7 @@ export function TopBar() {
   const mode = useAppStore((s) => s.mode);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur-md">
+    <header className="print:hidden sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-[var(--topbar-h)] max-w-[var(--content-max)] items-center gap-2 px-[var(--gutter)] sm:gap-3 lg:px-[var(--gutter-lg)]">
         {/* Logo only on mobile/tablet; desktop has it in the sidebar */}
         <Logo to="/app" compact className="lg:hidden" />

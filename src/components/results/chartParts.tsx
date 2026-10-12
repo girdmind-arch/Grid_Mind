@@ -81,7 +81,7 @@ export function ChartTable({
 }) {
   return (
     <details className="group mt-4">
-      <summary className="inline-flex h-9 cursor-pointer items-center rounded-sm text-sm font-semibold text-accent hover:text-accent-hover pointer-coarse:h-11">
+      <summary className="print:hidden inline-flex h-9 cursor-pointer items-center rounded-sm text-sm font-semibold text-accent hover:text-accent-hover pointer-coarse:h-11">
         <span className="group-open:hidden">Show as table</span>
         <span className="hidden group-open:inline">Hide table</span>
       </summary>
@@ -135,7 +135,7 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={cn("min-w-0 rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6", className)}>
+    <section className={cn("min-w-0 break-inside-avoid rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6 print:shadow-none", className)}>
       <div className="flex items-center gap-2.5">
         {icon}
         <h2 className="text-base font-semibold text-fg">{title}</h2>

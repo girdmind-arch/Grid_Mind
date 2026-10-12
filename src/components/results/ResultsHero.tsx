@@ -51,7 +51,7 @@ export function ResultsHero({ results }: { results: Results }) {
         />
       </dl>
 
-      <Button asChild variant="onHero" size="lg" className="mt-8">
+      <Button asChild variant="onHero" size="lg" className="mt-8 print:hidden">
         <Link to="/app/scenarios">
           <Play /> Test it with a scenario
         </Link>
