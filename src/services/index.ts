@@ -5,8 +5,8 @@
 // backend instead. Endpoint paths are the proposed contract; adjust them here
 // in one place if the backend team picks different ones.
 
-import type { FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
-import type { Agent, ApprovalResponse, Decision, GoalAck, GuardrailRule, IncidentMemory, Results, ScenarioRunHistory } from "@/types/agents";
+import type { ControlMode, FaultRequest, FaultResult, Forecast, GridState } from "@/types/grid";
+import type { Agent, ApprovalResponse, ControlModeAck, Decision, GoalAck, GuardrailRule, IncidentMemory, Results, ScenarioRunHistory } from "@/types/agents";
 import { USE_MOCKS, mockDelay, request } from "./api";
 import { applyApproval, buildGridState, clearFault, currentFault, mitigateFault, runInfo, startFault } from "./mock/state";
 import { buildForecast } from "./mock/forecast";
@@ -193,6 +193,19 @@ export async function getRunHistory(): Promise<ScenarioRunHistory[]> {
   // MOCK: three evaluation runs per scenario from the simulated campus.
   await mockDelay(300);
   return RUN_HISTORY;
+}
+
+/** Switches who is in control: AI agents, fallback rules, or a human operator. */
+export async function setControlMode(mode: ControlMode): Promise<ControlModeAck> {
+  if (!USE_MOCKS) return request<ControlModeAck>("/api/control/mode", { method: "POST", body: JSON.stringify({ mode }) });
+  // MOCK: acknowledges the switch; nothing on a real grid changes.
+  await mockDelay(400);
+  const message: Record<ControlMode, string> = {
+    ai: "Agents are planning and acting again, within the guardrails.",
+    fallback: "Fixed safety rules are running the grid. Agents keep forecasting but do not act.",
+    manual: "Agents have stopped acting. Guardrails still block unsafe commands.",
+  };
+  return { mode, changedAt: simNow().toISOString(), message: message[mode] };
 }
 
 /** Sets the operator's goal in plain English; the Commander restates how it understood it. */

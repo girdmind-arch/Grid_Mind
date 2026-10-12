@@ -108,7 +108,11 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
         active: { ...req, incidentId: fault.incidentId, startedAtMs: Date.now(), stabilisedAtMs: null },
         gridVersion: s.gridVersion + 1,
       }));
-      useAppStore.getState().setMode("ai");
+      // Scenarios demo the agents, so they take control back from Manual / Fallback.
+      if (useAppStore.getState().mode !== "ai") {
+        useAppStore.getState().setMode("ai");
+        toast({ title: "AI Control is back on", description: "Scenarios show the agents responding, so they take over for this run.", tone: "ai" });
+      }
 
       const decision = await runCommanderStep();
       const needsApproval = decision.approval?.status === "pending";

@@ -1,4 +1,4 @@
-import type { FaultType, ISODate } from "./grid";
+import type { ControlMode, FaultType, ISODate } from "./grid";
 
 export type AgentId =
   | "commander"
@@ -101,6 +101,13 @@ export type ApprovalResponse =
   | { decision: "approve" }
   | { decision: "modify"; optionId: string }
   | { decision: "reject" };
+
+export interface ControlModeAck {
+  mode: ControlMode;
+  changedAt: ISODate;
+  /** What changes now, in plain words. */
+  message: string;
+}
 
 export interface GoalAck {
   goal: string;
