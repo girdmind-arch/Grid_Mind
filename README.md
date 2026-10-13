@@ -2,7 +2,7 @@
 
 **A control room that thinks, acts, and explains.**
 
-GridMind is an agentic-AI system that manages a simulated campus microgrid: solar, a 2 MWh battery, the main grid, 4 hostels, 2 labs, a library and an admin block. AI agents forecast demand, build plans, test them in a digital twin, act within hard safety rules, explain their reasoning, and learn from every incident.
+GridMind is an agentic-AI system that manages a simulated campus microgrid: solar, a 2 MWh battery, the main grid, 4 hostels (BH1, BH2, GH1, GH2), an Electrical Lab, a Computer Science Lab, a library, lecture theatres, an admin block and a faculty compound. AI agents forecast demand, build plans, test them in a digital twin, act within hard safety rules, explain their reasoning, and learn from every incident.
 
 This repository holds the **website** (landing page at `/`), the **Control Room app** (`/app/*`) and the **FastAPI backend** (`backend/`: grid simulator, digital twin, forecaster, agent loop, memory, evaluation). It was built for **BITSETGO'26 (Agentic AI & ML)**. Without the backend, the website still runs on built-in demo data.
 
@@ -92,7 +92,7 @@ backend/
 │   ├── campus.py      buildings, feeders, battery, tariff, daily demand and solar profiles
 │   ├── simulator.py   grid physics: one balanced step (solar + battery + grid = demand)
 │   ├── grid.py        the live grid: simulated clock, faults, current control policy
-│   ├── agents.py      Commander loop: Plan A vs Plan B in the twin, Guardrail checks, explanations
+│   ├── agents.py      Orchestrator loop: Plan A vs Plan B in the twin, Guardrail checks, explanations
 │   ├── forecast.py    the Forecaster: next 12 hours and notable events
 │   ├── memory.py      incidents and lessons
 │   ├── evaluation.py  Results: 5 simulated weekdays, GridMind vs no AI
@@ -106,9 +106,9 @@ Project rules for contributors (design, theme tokens, data flow) are in [`CLAUDE
 
 - **Live clock and weather.** By default the campus runs on real Indian time. Every 15 minutes the backend fetches the real hourly temperature, solar irradiance and cloud cover for the campus location from [Open-Meteo](https://open-meteo.com) (free, no API key). Solar output comes from the irradiance, and cooling load rises and falls with the temperature. At midnight the "cost today" meter resets. If the weather service can't be reached, the backend uses a typical hot-day profile and the top bar says so. **Demo evening** (Settings) restarts the campus at 17:20 with today's weather at 1×, 10× or 60× speed, so judges can watch the evening peak arrive.
 - **Anywhere in India.** Settings → Campus location searches any city, town or campus in India (Open-Meteo place search, with a built-in list of about 30 cities as a fallback). Moving the campus switches the live weather to that place, applies that state's time-of-day tariff and DISCOM (`backend/gridmind/locations.py`), and re-simulates today. Results change too, because they use the state's tariff. The tariffs are illustrative; check each DISCOM's latest tariff order. Heating load is not modelled, so in a cold winter the cooling load just drops to its minimum.
-- **Agents that keep watching.** Every few seconds the Commander checks whether time or weather has moved on, and re-plans for the period it is in: recharge at night, hold the battery by day, shave the evening peak. Each re-plan appears in the thought trace, and the website refreshes every 5 seconds.
+- **Agents that keep watching.** Every few seconds the Orchestrator checks whether time or weather has moved on, and re-plans for the period it is in: recharge at night, hold the battery by day, shave the evening peak. Each re-plan appears in the thought trace, and the website refreshes every 5 seconds.
 - **Grid simulator.** Every simulated minute, building loads follow a hot-weekday profile. Solar follows the clear-sky curve (cut by clouds in a cloud-cover scenario), and the battery and grid make up the rest. Faults really change the grid: a line failure takes a hostel off its feeder, and a grid outage islands the campus.
-- **Digital twin and planning.** For each situation the Commander builds Plan A and Plan B and simulates both up to 22:00. The battery's evening import cap is sized by binary search in the twin. Each result is checked against the six guardrails (labs powered, battery 20–90%, feeders ≤ 90%, import ≤ 1,600 kW, hostel comfort, approval for high-impact actions). The passing plan with the best score for the operator's goal wins. The score adds cost, a comfort penalty, and a value-of-lost-load charge for any building left dark.
+- **Digital twin and planning.** For each situation the Orchestrator builds Plan A and Plan B and simulates both up to 22:00. The battery's evening import cap is sized by binary search in the twin. Each result is checked against the six guardrails (labs powered, battery 20–90%, feeders ≤ 90%, import ≤ 1,600 kW, hostel comfort, approval for high-impact actions). The passing plan with the best score for the operator's goal wins. The score adds cost, a comfort penalty, and a value-of-lost-load charge for any building left dark.
 - **Goals.** Goal text changes the planner: "storm" keeps a 60% battery reserve, "battery health" 40%, "comfort" protects hostel cooling, and "cost" accepts small comfort trade-offs.
 - **Memory and learning.** Each incident is stored with what was done. Run 1 of a scenario writes a lesson, and replays reuse it, which shortens detection and analysis in the response-time model.
 - **Results and what-if.** Five weekdays with different weather are simulated minute by minute, with GridMind and with no AI (battery idle, no load management). Daily cost includes energy, contract-limit penalties, a demand charge on the highest import, and the off-peak cost of refilling the battery. On the Results page, the what-if panel re-runs all five days with a different battery size, solar array, peak tariff or temperature (`POST /api/results/whatif`).
@@ -140,7 +140,7 @@ If the backend is unreachable or returns an error, the UI shows a calm message (
 | `getForecast()` | `GET /api/forecast` | `Forecast` |
 | `injectFault(req)` | `POST /api/scenarios/inject` | `FaultResult` |
 | `clearScenario()` | `POST /api/scenarios/clear` | — |
-| `runCommanderStep()` | `POST /api/agents/commander/step` | `Decision` |
+| `runOrchestratorStep()` | `POST /api/agents/orchestrator/step` | `Decision` |
 | `respondToApproval(decision, response)` | `POST /api/agents/decisions/{id}/approval` | `Decision` |
 | `getThoughtTrace()` | `GET /api/agents/trace` | `Decision[]` |
 | `getAgents()` | `GET /api/agents` | `Agent[]` |
@@ -169,13 +169,13 @@ Backend settings (environment variables): `CAMPUS_LAT`, `CAMPUS_LON`, `CAMPUS_NA
 
 ## Campus data
 
-A mid-sized Indian campus: 4 hostels, 2 labs, a library and an admin block, a ~720 kW rooftop solar array, and a 2 MWh battery. The demand profile is a hot weekday with an evening peak of about 1,510 kW at 19:00; live weather scales it up or down. The default tariff is UPPCL-style (peak ₹9.70/kWh from 18:00 to 22:00, off-peak ₹6.90/kWh overnight); other states use their own rates.
+A mid-sized Indian campus: 4 hostels (BH1, BH2, GH1, GH2), the Electrical and Computer Science labs, a library, lecture theatres, an admin block and a faculty compound, a ~720 kW rooftop solar array, and a 2 MWh battery. The demand profile is a hot weekday with an evening peak of about 1,510 kW at 19:00; live weather scales it up or down. The default tariff is UPPCL-style (peak ₹9.70/kWh from 18:00 to 22:00, off-peak ₹6.90/kWh overnight); other states use their own rates.
 
 The backend's evaluation gives **5.4% lower daily cost, 26.5% lower peak grid import, and 2.6 vs 14 min fault recovery** compared with no AI. The offline demo data in `src/services/mock/results.ts` is a snapshot of that output, so both modes show the same figures. Regenerate it if the simulation changes.
 
 ## Judge demo script (about 3 minutes)
 
-1. **Control Room** (`/app`). "This is the campus right now: solar, battery, grid, and eight buildings. The agents are preparing for the 18:00 peak." Point at the thought trace: Observe → Reason → Plan A vs Plan B → Safety check → Act.
+1. **Control Room** (`/app`). "This is the campus right now: solar, battery, grid, and ten buildings. The agents are preparing for the 18:00 peak." Point at the thought trace: Observe → Reason → Plan A vs Plan B → Safety check → Act.
 2. **Break something.** Go to **Scenarios** and click **Try a line failure**. Watch the Fault Responder isolate the feeder, the Planner test a reroute in the digital twin, and the Guardrail check it before anything is switched.
 3. **Replay.** Click **Replay same scenario**. The agents reuse the lesson from the first run and recover faster. The learning panel shows run 1 vs run 2 against the no-AI baseline.
    Optional: run **Grid Outage** to show a high-impact plan pausing for the operator's approval.

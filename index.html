@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="GridMind: an agentic-AI control room for a campus microgrid that thinks, acts, and explains." />
-    <meta name="theme-color" content="#f4f7fb" />
+    <meta name="theme-color" content="#e9e6df" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>GridMind · Smart Grid Intelligence</title>
     <!--
@@ -24,9 +24,13 @@
         var theme = dark ? "dark" : "light";
         var root = document.documentElement;
         root.setAttribute("data-theme", theme);
+        try {
+          var palette = localStorage.getItem("gridmind-palette");
+          if (palette && /^(pine|indigo|ocean|forest|plum|graphite)$/.test(palette)) root.setAttribute("data-palette", palette);
+        } catch (e) {}
         root.style.colorScheme = theme;
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute("content", dark ? "#060c18" : "#f4f7fb");
+        if (meta) meta.setAttribute("content", dark ? "#0a0d0c" : "#e9e6df");
       })();
     </script>
   </head>
