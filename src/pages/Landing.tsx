@@ -2,11 +2,9 @@ import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingHero } from "@/components/landing/LandingHero";
 import {
   AgentsSection,
-  DemoSection,
   HowItWorksSection,
   ProblemSection,
   ResultsTeaserSection,
-  TeamSection,
 } from "@/components/landing/LandingSections";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 
@@ -27,8 +25,6 @@ export default function Landing() {
         <HowItWorksSection />
         <AgentsSection />
         <ResultsTeaserSection />
-        <DemoSection />
-        <TeamSection />
       </main>
       <LandingFooter />
     </div>

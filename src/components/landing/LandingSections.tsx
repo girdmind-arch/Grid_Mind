@@ -8,12 +8,10 @@ import {
   GitCompareArrows,
   GraduationCap,
   IndianRupee,
-  PlayCircle,
   ShieldCheck,
   Sun,
   TrendingDown,
   TriangleAlert,
-  UserRound,
 } from "lucide-react";
 import { getAgents, getResults } from "@/services";
 import { useService } from "@/hooks/useService";
@@ -219,76 +217,6 @@ export function ResultsTeaserSection() {
           See how it was measured <ArrowRight />
         </Link>
       </Button>
-    </LandingSection>
-  );
-}
-
-// ---------- Demo video + architecture ----------
-
-const LAYERS = [
-  { title: "Control Room (this website)", text: "React app: live grid, agent reasoning, scenarios, results." },
-  { title: "Service layer", text: "One place the UI gets data from. Mock data today." },
-  { title: "FastAPI backend", text: "Grid simulator and digital twin, ML forecaster, agent loop, memory." },
-];
-
-export function DemoSection() {
-  return (
-    <LandingSection id="demo" eyebrow="See it run" title="The two‑minute walkthrough." description="A line fails, the agents reroute power, and the replay recovers faster.">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div className="flex min-h-64 min-w-0 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border-strong bg-surface-sunken p-6 text-center sm:aspect-video">
-          <PlayCircle aria-hidden strokeWidth={1.75} className="size-12 text-fg-subtle" />
-          <p className="font-semibold text-fg">Demo video coming soon</p>
-          <p className="max-w-sm text-sm text-fg-muted">Until then, try it yourself: open the demo and run a line failure from Scenarios.</p>
-          <Button asChild variant="primary" size="sm" className="mt-1">
-            <Link to="/app/scenarios">Try a scenario</Link>
-          </Button>
-        </div>
-
-        <Card className="min-w-0">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-fg">Architecture</h3>
-            <Badge tone="neutral" size="sm">
-              Draft
-            </Badge>
-          </div>
-          <ol className="mt-5 space-y-2.5">
-            {LAYERS.map((l, i) => (
-              <li key={l.title}>
-                <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-                  <p className="text-[15px] font-semibold text-fg">{l.title}</p>
-                  <p className="mt-0.5 text-sm text-fg-muted">{l.text}</p>
-                </div>
-                {i < LAYERS.length - 1 && <div aria-hidden className="mx-auto h-3 w-px bg-border-strong" />}
-              </li>
-            ))}
-          </ol>
-          <p className="mt-4 text-sm text-fg-subtle">Full diagram to be added.</p>
-        </Card>
-      </div>
-    </LandingSection>
-  );
-}
-
-// ---------- Team ----------
-
-export function TeamSection() {
-  return (
-    <LandingSection id="team" eyebrow="Team" title="Who built GridMind." description="Names and roles to be added.">
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[1, 2, 3, 4].map((n) => (
-          <li key={n}>
-            <Card className="flex h-full items-center gap-4">
-              <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-surface-sunken text-fg-subtle">
-                <UserRound strokeWidth={1.75} className="size-6" />
-              </span>
-              <div className="min-w-0">
-                <p className="font-semibold text-fg">Team member {n}</p>
-                <p className="text-sm text-fg-muted">Role to be added</p>
-              </div>
-            </Card>
-          </li>
-        ))}
-      </ul>
     </LandingSection>
   );
 }
