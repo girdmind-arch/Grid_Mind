@@ -5,29 +5,39 @@ import { getGridState } from "@/services";
 import { useService } from "@/hooks/useService";
 import { useScenarioStore } from "@/store/scenarioStore";
 import { Badge, Card, ErrorState, IconTile, PageHeader, Skeleton } from "@/components/ui";
-import { GridDiagram } from "@/components/grid/GridDiagram";
-import { LatestDecision } from "@/components/control-room/LatestDecision";
+import { GridDiagram, GridLegend } from "@/components/grid/GridDiagram";
+import { AgentFeed } from "@/components/scenarios/AgentFeed";
+import { OutcomeCard } from "@/components/scenarios/OutcomeCard";
+import { ScenarioLauncher } from "@/components/scenarios/ScenarioLauncher";
 import { ScenarioBanner } from "@/components/scenarios/ScenarioBanner";
 import { ScenarioHero } from "@/components/scenarios/ScenarioHero";
 import { ScenarioConfigCard } from "@/components/scenarios/ScenarioConfigCard";
 import { SCENARIO_ORDER } from "@/components/scenarios/scenarioMeta";
 
 export default function Scenarios() {
-  const { phase, active, history, decisions, gridVersion, run, loadTrace } = useScenarioStore();
+  const { phase, active, history, gridVersion, faultSnapshot, stage, touring, startFresh, loadTrace } = useScenarioStore();
   const grid = useService(getGridState, [gridVersion]);
-  // Show the decision for the running scenario once it exists.
-  const shown = (active && decisions.find((d) => d.incidentId === active.incidentId)) || decisions[0];
-  const busy = phase === "responding" || phase === "awaiting-approval";
+  // Right after the fault hits, show the broken grid until the agents act.
+  const shownGrid = faultSnapshot ?? grid.data;
+  const busy = phase === "responding" || phase === "awaiting-approval" || touring;
+  const runs = active ? (history[active.type] ?? []) : [];
 
   useEffect(() => {
     void loadTrace();
   }, [loadTrace]);
 
-  const start = (type: FaultType, severity = 3, durationMin = 30) => {
-    void run(type, { severity, durationMin });
-    // Bring the live response into view (top of the page).
+  // Bring each new incident's live response into view, however it was started
+  // (a card, the launcher or Presentation mode). Runs once the banner exists,
+  // so the clear-then-run layout change can't cancel the scroll.
+  const incidentId = active?.incidentId;
+  useEffect(() => {
+    if (!incidentId) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  }, [incidentId]);
+
+  const start = (type: FaultType, severity = 3, durationMin = 30) => {
+    void startFresh(type, { severity, durationMin });
   };
 
   return (
@@ -45,22 +55,32 @@ export default function Scenarios() {
           <div className="grid gap-4 xl:grid-cols-12">
             <Card className="min-w-0 xl:col-span-8">
               <div className="mb-5 flex items-center gap-2.5">
-                <IconTile icon={<Activity />} tone="accent" size="sm" />
+                <IconTile icon={<Activity />} tone={faultSnapshot ? "danger" : "accent"} size="sm" />
                 <h2 className="text-base font-semibold text-fg">Live grid</h2>
-                <Badge tone="success" size="sm" dot pulse className="ml-auto">
-                  Live
-                </Badge>
+                {faultSnapshot ? (
+                  <Badge tone="danger" size="sm" dot pulse className="ml-auto">
+                    {stage === "fault" ? "Fault" : "Fault · agents planning"}
+                  </Badge>
+                ) : (
+                  <Badge tone="success" size="sm" dot pulse className="ml-auto">
+                    Live
+                  </Badge>
+                )}
               </div>
-              {grid.status === "error" && !grid.data ? (
+              {grid.status === "error" && !shownGrid ? (
                 <ErrorState message={grid.error} onRetry={grid.retry} />
-              ) : grid.data ? (
-                <GridDiagram state={grid.data} />
+              ) : shownGrid ? (
+                <GridDiagram state={shownGrid} />
               ) : (
                 <Skeleton className="h-[420px]" />
               )}
+              <GridLegend className="mt-5 border-t border-border pt-4" />
             </Card>
-            <LatestDecision decision={shown} className="min-w-0 xl:col-span-4" />
+            <AgentFeed className="min-w-0 xl:col-span-4" />
           </div>
+          {phase === "stable" && runs.length > 0 && (
+            <OutcomeCard type={active.type} runs={runs} incidentId={active.incidentId} />
+          )}
         </div>
       )}
 
@@ -70,9 +90,10 @@ export default function Scenarios() {
             {active ? "Run another scenario" : "Choose a scenario"}
           </h2>
           <p className="text-[13px] text-fg-muted">
-            {busy ? "Wait for the agents to finish the current one." : "Each run is tested in the digital twin first."}
+            {touring ? "Presentation mode is running." : busy ? "Wait for the agents to finish the current one." : "Each run is tested in the digital twin first."}
           </p>
         </div>
+        <ScenarioLauncher onRun={start} disabled={busy} className="mb-4" />
         <div className="grid gap-4 md:grid-cols-2">
           {SCENARIO_ORDER.map((type) => (
             <ScenarioConfigCard

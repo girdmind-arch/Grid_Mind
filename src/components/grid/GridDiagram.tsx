@@ -27,8 +27,12 @@ const ZONE_ICONS: Record<ZoneKind, typeof BedDouble> = {
   admin: Landmark,
 };
 
+/** Routine evening pre-cooling is a saving, not a problem: say so instead of "Reduced". */
+const isPeakSaving = (z: Zone) => z.status === "reduced" && !!z.note?.startsWith("Pre-cool");
+const isRerouted = (z: Zone) => z.status === "reduced" && !!z.note?.includes("backup feeder");
+
 const zoneState = (z: Zone): NodeState =>
-  z.status === "faulted" || z.status === "isolated" ? "faulted" : z.status === "reduced" ? "reduced" : "normal";
+  z.status === "faulted" || z.status === "isolated" ? "faulted" : z.status === "reduced" && !isPeakSaving(z) ? "reduced" : "normal";
 
 interface Layout {
   W: number;
@@ -163,7 +167,7 @@ export function GridDiagram({ state, className }: { state: GridState; className?
                     y2={cy}
                     kw={z.demandKw}
                     maxKw={maxKw / 2}
-                    tone={faulted ? "fault" : "zone"}
+                    tone={faulted ? "fault" : isRerouted(z) ? "reroute" : "zone"}
                   />
                 );
               })}
@@ -204,9 +208,32 @@ export function GridDiagram({ state, className }: { state: GridState; className?
                   tone={z.kind === "lab" ? "success" : z.kind === "hostel" ? "accent" : "neutral"}
                   state={zoneState(z)}
                   protectedZone={z.priority === "critical"}
+                  label={
+                    isPeakSaving(z)
+                      ? { text: "Peak saving", tone: "neutral" }
+                      : isRerouted(z)
+                        ? { text: "Rerouted", tone: "ai" }
+                        : undefined
+                  }
                   compact={L.narrow}
                   style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
                 />
+              );
+            })}
+
+            {/* Tag the backup path so the reroute is obvious */}
+            {ordered.map((z, i) => {
+              if (!isRerouted(z) || L.narrow) return null;
+              const box = L.zone[i];
+              const edge = box.left ? box.x + box.w : box.x;
+              return (
+                <div
+                  key={`${z.id}-f2`}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 animate-pop-in rounded-full border border-ai/40 bg-surface px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-ai shadow-sm"
+                  style={{ left: (L.spineX + edge) / 2, top: box.y + box.h / 2 }}
+                >
+                  via F2
+                </div>
               );
             })}
           </>
@@ -231,6 +258,7 @@ export function GridLegend({ className }: { className?: string }) {
       {item("var(--success)", "Battery")}
       {item("var(--accent)", "Grid / campus feeders")}
       {item("var(--danger)", "Fault", true)}
+      {item("var(--ai)", "Backup feeder")}
       <li>Thicker line = more power</li>
     </ul>
   );

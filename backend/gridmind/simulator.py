@@ -203,7 +203,8 @@ def step(bat: Battery, tot: Totals, hour: float, dt_h: float, cond: Conditions, 
     usable_kwh = max(0.0, (bat.soc_pct - pol.reserve_floor_pct) / 100 * cap_kwh)
     room_kwh = max(0.0, (c.BATTERY_CEIL_PCT - bat.soc_pct) / 100 * cap_kwh)
     max_kw = c.BATTERY_MAX_KW * min(1.0, cap_kwh / c.BATTERY_CAPACITY_KWH) if cap_kwh > 0 else 0.0
-    max_out = min(max_kw, usable_kwh * c.BATTERY_EFF / dt_h) if dt_h > 0 else 0.0
+    # dt_h == 0 is an instant snapshot: any charge above the floor can deliver full power.
+    max_out = min(max_kw, usable_kwh * c.BATTERY_EFF / dt_h) if dt_h > 0 else (max_kw if usable_kwh > 0 else 0.0)
 
     battery = 0.0
     if cond.outage:
@@ -214,7 +215,7 @@ def step(bat: Battery, tot: Totals, hour: float, dt_h: float, cond: Conditions, 
             # Charge at off-peak rates without creating a new import peak.
             cap = pol.peak_target_kw if pol.peak_target_kw is not None else NIGHT_IMPORT_CAP_KW
             headroom = max(0.0, cap - net)
-            battery = -min(300.0, headroom, room_kwh / c.BATTERY_EFF / dt_h) if dt_h > 0 else 0.0
+            battery = -min(300.0, headroom, room_kwh / c.BATTERY_EFF / dt_h if dt_h > 0 else (300.0 if room_kwh > 0 else 0.0))
         else:
             want = pol.extra_discharge_kw
             if pol.bridge_solar_gap:
