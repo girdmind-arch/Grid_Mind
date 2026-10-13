@@ -21,9 +21,9 @@ export function BottomNav() {
     <>
       <nav
         aria-label="Main"
-        className="print:hidden fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+        className="print:hidden fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-30 mx-auto max-w-xl rounded-2xl border border-glass-border bg-surface-solid/92 shadow-lg glass-strong lg:hidden"
       >
-        <ul className="mx-auto flex h-[var(--bottomnav-h)] max-w-xl px-2">
+        <ul className="flex h-[var(--bottomnav-h)] px-1.5">
           {PRIMARY_MOBILE.map(({ to, label, icon: Icon }) => (
             <li key={to} className="flex flex-1">
               <NavLink to={to} end={to === "/app"} className={({ isActive }) => itemClass(isActive)}>
