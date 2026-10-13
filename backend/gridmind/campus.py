@@ -14,40 +14,46 @@ from dataclasses import dataclass
 class ZoneSpec:
     id: str
     name: str
-    kind: str  # hostel | lab | library | admin
+    kind: str  # hostel | lab | library | admin | academic | residence
     priority: str  # critical | high | normal
     feeder: str
     # Share of total campus demand (no-AI baseline) this building draws.
     share: float
 
 
-# Demand at 17:20 split across buildings: 168+154+142+131+236+188+121+100 = 1,240 kW.
+# Demand at 17:20 split across buildings (still 1,240 kW in total):
+# hostels 150+138+128+116, labs 196+164, library 100, lecture theatres 70,
+# admin 82, faculty compound 96.
 _KW_1720 = {
-    "hostel-kaveri": 168,
-    "hostel-godavari": 154,
-    "hostel-narmada": 142,
-    "hostel-ganga": 131,
-    "lab-electronics": 236,
-    "lab-biosciences": 188,
-    "library": 121,
-    "admin": 100,
+    "hostel-bh1": 150,
+    "hostel-bh2": 138,
+    "hostel-gh1": 128,
+    "hostel-gh2": 116,
+    "lab-electrical": 196,
+    "lab-cs": 164,
+    "library": 100,
+    "lecture-theatres": 70,
+    "admin": 82,
+    "faculty-compound": 96,
 }
 _TOTAL_1720 = sum(_KW_1720.values())
 
 ZONES: list[ZoneSpec] = [
-    ZoneSpec("hostel-kaveri", "Kaveri Hostel", "hostel", "normal", "F1", _KW_1720["hostel-kaveri"] / _TOTAL_1720),
-    ZoneSpec("hostel-godavari", "Godavari Hostel", "hostel", "normal", "F1", _KW_1720["hostel-godavari"] / _TOTAL_1720),
-    ZoneSpec("hostel-narmada", "Narmada Hostel", "hostel", "normal", "F3", _KW_1720["hostel-narmada"] / _TOTAL_1720),
-    ZoneSpec("hostel-ganga", "Ganga Hostel", "hostel", "normal", "F2", _KW_1720["hostel-ganga"] / _TOTAL_1720),
-    ZoneSpec("lab-electronics", "Electronics Lab", "lab", "critical", "F4", _KW_1720["lab-electronics"] / _TOTAL_1720),
-    ZoneSpec("lab-biosciences", "Bio-Sciences Lab", "lab", "critical", "F4", _KW_1720["lab-biosciences"] / _TOTAL_1720),
+    ZoneSpec("hostel-bh1", "BH1", "hostel", "normal", "F1", _KW_1720["hostel-bh1"] / _TOTAL_1720),
+    ZoneSpec("hostel-bh2", "BH2", "hostel", "normal", "F1", _KW_1720["hostel-bh2"] / _TOTAL_1720),
+    ZoneSpec("hostel-gh1", "GH1", "hostel", "normal", "F3", _KW_1720["hostel-gh1"] / _TOTAL_1720),
+    ZoneSpec("hostel-gh2", "GH2", "hostel", "normal", "F2", _KW_1720["hostel-gh2"] / _TOTAL_1720),
+    ZoneSpec("lab-electrical", "Electrical Lab", "lab", "critical", "F4", _KW_1720["lab-electrical"] / _TOTAL_1720),
+    ZoneSpec("lab-cs", "Computer Science Lab", "lab", "critical", "F4", _KW_1720["lab-cs"] / _TOTAL_1720),
     ZoneSpec("library", "Central Library", "library", "high", "F2", _KW_1720["library"] / _TOTAL_1720),
+    ZoneSpec("lecture-theatres", "Lecture Theatres", "academic", "high", "F5", _KW_1720["lecture-theatres"] / _TOTAL_1720),
     ZoneSpec("admin", "Admin Block", "admin", "high", "F5", _KW_1720["admin"] / _TOTAL_1720),
+    ZoneSpec("faculty-compound", "Faculty Compound", "residence", "normal", "F6", _KW_1720["faculty-compound"] / _TOTAL_1720),
 ]
 ZONE_BY_ID = {z.id: z for z in ZONES}
 
 # Feeder ratings (kW). Guardrail G3 keeps every feeder at or below 90%.
-FEEDER_RATING_KW = {"F1": 520, "F2": 430, "F3": 260, "F4": 700, "F5": 220}
+FEEDER_RATING_KW = {"F1": 520, "F2": 430, "F3": 260, "F4": 700, "F5": 300, "F6": 220}
 FEEDER_LIMIT = 0.9
 
 # Battery: 2 MWh, usable window 20-90% (Guardrail G2).

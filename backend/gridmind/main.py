@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from . import campus as c
-from .agents import GUARDRAILS, Commander
+from .agents import GUARDRAILS, Orchestrator
 from .evaluation import build_results, build_run_history
 from .forecast import build_forecast
 from .grid import LiveGrid, iso
@@ -36,7 +36,7 @@ _t = tariff_for(weather.state)
 c.set_tariff(_t.off_peak, _t.normal, _t.peak)
 grid = LiveGrid(weather)
 memory = Memory()
-commander = Commander(grid, memory)
+orchestrator = Orchestrator(grid, memory)
 TICK_S = 5.0
 
 
@@ -45,7 +45,7 @@ def _agent_loop():
     while True:
         time.sleep(TICK_S)
         try:
-            commander.tick()
+            orchestrator.tick()
         except Exception:  # keep the loop alive; the error is in the logs
             logging.getLogger("gridmind.agents").exception("agent tick failed")
 
@@ -201,9 +201,9 @@ def clear():
     return JSONResponse(None)
 
 
-@app.post("/api/agents/commander/step")
-def commander_step():
-    return commander.step()
+@app.post("/api/agents/orchestrator/step")
+def orchestrator_step():
+    return orchestrator.step()
 
 
 @app.post("/api/agents/decisions/{decision_id}/approval")
@@ -211,19 +211,19 @@ def approval(decision_id: str, body: ApprovalBody):
     if body.decision == "modify" and body.optionId not in {"0.5", "0.6", "0.7"}:
         raise HTTPException(400, "Pick one of the offered options.")
     try:
-        return commander.respond(decision_id, body.model_dump(exclude_none=True))
+        return orchestrator.respond(decision_id, body.model_dump(exclude_none=True))
     except KeyError:
         raise HTTPException(404, "That decision is not waiting for approval.")
 
 
 @app.get("/api/agents/trace")
 def trace():
-    return commander.decisions
+    return orchestrator.decisions
 
 
 @app.get("/api/agents")
 def agents():
-    return commander.agents()
+    return orchestrator.agents()
 
 
 @app.get("/api/guardrails")
@@ -253,7 +253,7 @@ def results_runs():
 
 @app.post("/api/goal")
 def set_goal(body: GoalBody):
-    return commander.set_goal(body.goal)
+    return orchestrator.set_goal(body.goal)
 
 
 @app.get("/api/locations/search")
@@ -277,14 +277,14 @@ def set_location(body: LocationBody):
     c.set_tariff(t.off_peak, t.normal, t.peak)
     weather.set_location(body.name, body.state, body.lat, body.lon)
     grid.set_clock(grid.clock_mode, grid.speed)
-    commander.decisions.insert(0, commander._routine_decision())
+    orchestrator.decisions.insert(0, orchestrator._routine_decision())
     return get_location()
 
 
 @app.get("/api/control")
 def get_control():
     """Current mode and goal, so a reloaded page shows the real state."""
-    return {"mode": grid.mode, "goal": commander.goal.text, "interpretation": commander.goal.interpretation()}
+    return {"mode": grid.mode, "goal": orchestrator.goal.text, "interpretation": orchestrator.goal.interpretation()}
 
 
 @app.get("/api/sim")
@@ -295,7 +295,7 @@ def get_sim():
 @app.post("/api/sim")
 def set_sim(body: ClockBody):
     grid.set_clock(body.clock, body.speed)
-    commander.decisions.insert(0, commander._routine_decision())
+    orchestrator.decisions.insert(0, orchestrator._routine_decision())
     return grid.environment()
 
 
