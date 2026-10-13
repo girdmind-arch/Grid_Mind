@@ -3,7 +3,7 @@
 // An idle line stays solid (connected, just no flow right now).
 // A faulted line turns red, stops moving and shows a break.
 
-export type FlowTone = "solar" | "battery" | "grid" | "zone" | "fault";
+export type FlowTone = "solar" | "battery" | "grid" | "zone" | "fault" | "reroute";
 
 const toneColor: Record<FlowTone, string> = {
   solar: "var(--solar)",
@@ -11,6 +11,8 @@ const toneColor: Record<FlowTone, string> = {
   grid: "var(--accent)",
   zone: "var(--accent)",
   fault: "var(--danger)",
+  /** Power restored through a backup feeder after a fault. */
+  reroute: "var(--ai)",
 };
 
 interface PowerFlowLineProps {

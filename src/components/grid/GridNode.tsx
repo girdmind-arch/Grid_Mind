@@ -15,18 +15,20 @@ interface GridNodeProps {
   state?: NodeState;
   /** Labs: never shed. Shown as a small shield. */
   protectedZone?: boolean;
+  /** Overrides the state pill, e.g. "Peak saving" for routine pre-cooling. */
+  label?: { text: string; tone: "warning" | "danger" | "neutral" | "ai" };
   compact?: boolean;
   style: React.CSSProperties;
 }
 
-const stateLabel: Partial<Record<NodeState, { text: string; tone: "warning" | "danger" | "neutral" }>> = {
+const stateLabel: Partial<Record<NodeState, { text: string; tone: "warning" | "danger" | "neutral" | "ai" }>> = {
   reduced: { text: "Reduced", tone: "warning" },
   faulted: { text: "Fault", tone: "danger" },
 };
 
 /** A box in the grid diagram (source or zone). Absolutely positioned by GridDiagram. */
-export function GridNode({ name, value, sub, icon, tone, state = "normal", protectedZone, compact, style }: GridNodeProps) {
-  const label = stateLabel[state];
+export function GridNode({ name, value, sub, icon, tone, state = "normal", protectedZone, label: labelOverride, compact, style }: GridNodeProps) {
+  const label = labelOverride ?? stateLabel[state];
   return (
     <div
       style={style}
