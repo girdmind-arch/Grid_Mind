@@ -17,9 +17,10 @@ def client():
 
 def test_grid_state_balances(client):
     g = client.get("/api/grid/state").json()
-    supply = g["solarKw"] + max(0, -g["battery"]["powerKw"]) + g["gridImportKw"]
+    # battery powerKw > 0 means charging (a load), < 0 means supplying the campus
+    supply = g["solarKw"] + g["gridImportKw"] - g["battery"]["powerKw"]
     assert abs(supply - g["demandKw"]) <= 3  # rounding only
-    assert len(g["zones"]) == 8
+    assert len(g["zones"]) == 10
     assert 20 <= g["battery"]["socPct"] <= 90
     assert g["tariff"]["slab"] in {"off-peak", "normal", "peak"}
 
@@ -33,7 +34,7 @@ def test_forecast_shape(client):
 @pytest.mark.parametrize("fault", ["cloud_cover", "heatwave", "line_failure"])
 def test_scenarios_pick_a_safe_plan(client, fault):
     client.post("/api/scenarios/inject", json={"type": fault, "severity": 3, "durationMin": 30})
-    d = client.post("/api/agents/commander/step").json()
+    d = client.post("/api/agents/orchestrator/step").json()
     assert d["chosenPlanId"] in {"A", "B"}
     assert [s["kind"] for s in d["steps"]] == ["observe", "reason", "plan", "safety", "act", "result"]
     assert d["outcome"]["recoveryMin"] < d["outcome"]["baselineMin"]
@@ -45,10 +46,10 @@ def test_scenarios_pick_a_safe_plan(client, fault):
 
 def test_line_failure_reroutes_within_feeder_limit(client):
     client.post("/api/scenarios/inject", json={"type": "line_failure", "severity": 3, "durationMin": 30})
-    d = client.post("/api/agents/commander/step").json()
+    d = client.post("/api/agents/orchestrator/step").json()
     assert d["chosenPlanId"] == "B"
-    narmada = next(z for z in client.get("/api/grid/state").json()["zones"] if z["id"] == "hostel-narmada")
-    assert narmada["status"] == "reduced" and narmada["demandKw"] > 0
+    gh1 = next(z for z in client.get("/api/grid/state").json()["zones"] if z["id"] == "hostel-gh1")
+    assert gh1["status"] == "reduced" and gh1["demandKw"] > 0
 
 
 def test_replay_is_faster_and_reuses_the_lesson(client):
@@ -56,7 +57,7 @@ def test_replay_is_faster_and_reuses_the_lesson(client):
     for _ in range(2):
         client.post("/api/scenarios/clear")
         client.post("/api/scenarios/inject", json={"type": "cloud_cover", "severity": 3, "durationMin": 30})
-        d = client.post("/api/agents/commander/step").json()
+        d = client.post("/api/agents/orchestrator/step").json()
         times.append(d["outcome"]["recoveryMin"])
     assert times[1] < times[0]
     assert d["outcome"].get("lessonApplied")
@@ -64,7 +65,7 @@ def test_replay_is_faster_and_reuses_the_lesson(client):
 
 def test_grid_outage_waits_for_approval(client):
     client.post("/api/scenarios/inject", json={"type": "grid_outage", "severity": 3, "durationMin": 30})
-    d = client.post("/api/agents/commander/step").json()
+    d = client.post("/api/agents/orchestrator/step").json()
     assert d["approval"]["status"] == "pending"
     assert client.get("/api/grid/state").json()["activeFault"]["mitigated"] is False
     d2 = client.post(f"/api/agents/decisions/{d['id']}/approval", json={"decision": "modify", "optionId": "0.5"}).json()
@@ -99,7 +100,7 @@ def test_memory_and_agents(client):
     m = client.get("/api/memory").json()
     assert len(m["incidents"]) >= 4 and m["lessons"]
     agents = client.get("/api/agents").json()
-    assert {a["id"] for a in agents} == {"commander", "forecaster", "zone", "planner", "fault", "critic", "guardrail"}
+    assert {a["id"] for a in agents} == {"orchestrator", "forecaster", "zone", "planner", "fault", "critic", "guardrail"}
     assert len(client.get("/api/guardrails").json()) == 6
 
 
