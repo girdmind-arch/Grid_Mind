@@ -7,7 +7,6 @@ export const LANDING_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#agents", label: "Agents" },
   { href: "#results", label: "Results" },
-  { href: "#team", label: "Team" },
 ];
 
 /** Sticky site header: logo, section links (desktop), theme toggle, the demo button. */

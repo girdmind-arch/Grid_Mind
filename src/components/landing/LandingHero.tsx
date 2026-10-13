@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRight, PlayCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { USE_MOCKS, getGridState } from "@/services";
 import { useService } from "@/hooks/useService";
 import { Badge, Button, Skeleton } from "@/components/ui";
@@ -37,11 +37,6 @@ export function LandingHero() {
                 <Link to="/app">
                   Open the live demo <ArrowRight />
                 </Link>
-              </Button>
-              <Button asChild variant="onHeroGhost" size="lg">
-                <a href="#demo">
-                  <PlayCircle /> Watch the walkthrough
-                </a>
               </Button>
             </div>
           </div>
