@@ -11,7 +11,7 @@ interface AppState {
   mode: ControlMode;
   setMode: (mode: ControlMode) => void;
 
-  /** The operator's current goal, and how the Commander understood it. */
+  /** The operator's current goal, and how the Orchestrator understood it. */
   goal: string;
   goalInterpretation: string | null;
   setGoal: (goal: string, interpretation: string) => void;
