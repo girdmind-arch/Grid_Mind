@@ -16,10 +16,10 @@ export const DECISIONS: Decision[] = [
     trigger: "Demand will reach 1,510 kW at 19:00 while the tariff rises to ₹9.70/kWh.",
     steps: [
       { id: "s1", kind: "observe", agent: "forecaster", at: at("17:12"), summary: "Peak of 1,510 kW expected at 19:00. Solar fades by 18:40.", detail: "Forecast confidence ±4%. 38°C outside, hostel AC load rising." },
-      { id: "s2", kind: "reason", agent: "commander", at: at("17:13"), summary: "Grid power costs 18% more in the peak. Battery is at 82%.", detail: "Keeping the battery charged now and using it from 18:00 avoids peak-rate imports." },
+      { id: "s2", kind: "reason", agent: "orchestrator", at: at("17:13"), summary: "Grid power costs 18% more in the peak. Battery is at 82%.", detail: "Keeping the battery charged now and using it from 18:00 avoids peak-rate imports." },
       { id: "s3", kind: "plan", agent: "planner", at: at("17:14"), summary: "Tested 2 plans in the digital twin over the next 5 hours." },
       { id: "s4", kind: "safety", agent: "guardrail", at: at("17:14"), summary: "Plan B passes all rules. Labs keep full power. Battery stays above 20%." },
-      { id: "s5", kind: "act", agent: "commander", at: at("17:15"), summary: "Holding battery at 82% until 18:00, then discharging up to 350 kW." },
+      { id: "s5", kind: "act", agent: "orchestrator", at: at("17:15"), summary: "Holding battery at 82% until 18:00, then discharging up to 350 kW." },
       { id: "s6", kind: "result", agent: "critic", at: at("17:16"), summary: "Projected saving ₹4,180 tonight vs. the no-AI baseline." },
     ],
     plans: [
@@ -39,10 +39,10 @@ export const DECISIONS: Decision[] = [
     trigger: "Solar is still producing more than the library and admin block need.",
     steps: [
       { id: "s1", kind: "observe", agent: "forecaster", at: at("16:41"), summary: "Solar surplus of 120 kW for the next 40 minutes." },
-      { id: "s2", kind: "reason", agent: "commander", at: at("16:41"), summary: "Storing free solar is cheaper than buying ₹9.70 power later." },
+      { id: "s2", kind: "reason", agent: "orchestrator", at: at("16:41"), summary: "Storing free solar is cheaper than buying ₹9.70 power later." },
       { id: "s3", kind: "plan", agent: "planner", at: at("16:42"), summary: "Compared exporting surplus vs. charging the battery." },
       { id: "s4", kind: "safety", agent: "guardrail", at: at("16:42"), summary: "Battery stays below the 90% limit. All rules pass." },
-      { id: "s5", kind: "act", agent: "commander", at: at("16:42"), summary: "Charged battery from 78% to 82% using solar." },
+      { id: "s5", kind: "act", agent: "orchestrator", at: at("16:42"), summary: "Charged battery from 78% to 82% using solar." },
       { id: "s6", kind: "result", agent: "critic", at: at("17:05"), summary: "Stored 80 kWh of solar for the evening peak." },
     ],
     plans: [
@@ -56,17 +56,17 @@ export const DECISIONS: Decision[] = [
   },
 ];
 
-/** Response the Commander produces for each scenario (MOCK). */
+/** Response the Orchestrator produces for each scenario (MOCK). */
 export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "startedAt">> = {
   cloud_cover: {
     title: "Cover the solar dip with battery",
     trigger: "Solar output dropped sharply as clouds moved over the campus.",
     steps: [
       { id: "s1", kind: "observe", agent: "forecaster", at: "", summary: "Solar fell by 140 kW in 2 minutes. Clouds expected for ~25 min.", detail: "Satellite cloud-motion estimate. Similar dip on 11 May lasted 22 minutes." },
-      { id: "s2", kind: "reason", agent: "commander", at: "", summary: "Buying the gap from the grid would raise the bill just before peak." },
+      { id: "s2", kind: "reason", agent: "orchestrator", at: "", summary: "Buying the gap from the grid would raise the bill just before peak." },
       { id: "s3", kind: "plan", agent: "planner", at: "", summary: "Tested 2 plans in the digital twin." },
       { id: "s4", kind: "safety", agent: "guardrail", at: "", summary: "Battery stays above 75% for the peak. All rules pass." },
-      { id: "s5", kind: "act", agent: "commander", at: "", summary: "Battery now covers the 140 kW gap." },
+      { id: "s5", kind: "act", agent: "orchestrator", at: "", summary: "Battery now covers the 140 kW gap." },
       { id: "s6", kind: "result", agent: "critic", at: "", summary: "Grid draw held steady. No zone noticed the dip." },
     ],
     plans: [
@@ -84,10 +84,10 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     trigger: "Temperature jumped to 42°C and hostel cooling demand is climbing.",
     steps: [
       { id: "s1", kind: "observe", agent: "zone", at: "", summary: "Hostel demand up 12% in 10 minutes as ACs ramp up." },
-      { id: "s2", kind: "reason", agent: "commander", at: "", summary: "Peak will be ~150 kW above plan. Grid import would hit the contract limit." },
+      { id: "s2", kind: "reason", agent: "orchestrator", at: "", summary: "Peak will be ~150 kW above plan. Grid import would hit the contract limit." },
       { id: "s3", kind: "plan", agent: "planner", at: "", summary: "Tested 2 plans in the digital twin." },
       { id: "s4", kind: "safety", agent: "guardrail", at: "", summary: "Labs untouched. Hostel rooms stay at or below 26°C. All rules pass." },
-      { id: "s5", kind: "act", agent: "commander", at: "", summary: "Battery adds 200 kW; hostels pre-cool and hold 1°C warmer." },
+      { id: "s5", kind: "act", agent: "orchestrator", at: "", summary: "Battery adds 200 kW; hostels pre-cool and hold 1°C warmer." },
       { id: "s6", kind: "result", agent: "critic", at: "", summary: "Grid import back under the limit. Comfort at 94%." },
     ],
     plans: [
@@ -101,14 +101,14 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     usedMemory: { incidentId: "INC-38", summary: "5 May heatwave: start pre-cooling 30 min before peak." },
   },
   line_failure: {
-    title: "Isolate fault and reroute Narmada Hostel",
-    trigger: "Feeder F3 tripped. Narmada Hostel lost power.",
+    title: "Isolate fault and reroute GH1",
+    trigger: "Feeder F3 tripped. GH1 lost power.",
     steps: [
-      { id: "s1", kind: "observe", agent: "fault", at: "", summary: "Feeder F3 tripped at the cable joint near Narmada Hostel.", detail: "Overcurrent relay R3 opened. Voltage on F3 dropped to zero." },
-      { id: "s2", kind: "reason", agent: "commander", at: "", summary: "Feeder F2 has 160 kW spare capacity, enough for 96% of the hostel." },
+      { id: "s1", kind: "observe", agent: "fault", at: "", summary: "Feeder F3 tripped at the cable joint near GH1.", detail: "Overcurrent relay R3 opened. Voltage on F3 dropped to zero." },
+      { id: "s2", kind: "reason", agent: "orchestrator", at: "", summary: "Feeder F2 has about 125 kW of safe spare capacity, enough for 96% of GH1." },
       { id: "s3", kind: "plan", agent: "planner", at: "", summary: "Tested 2 plans in the digital twin." },
       { id: "s4", kind: "safety", agent: "guardrail", at: "", summary: "F2 stays under 90% loading. Labs unaffected. All rules pass." },
-      { id: "s5", kind: "act", agent: "fault", at: "", summary: "Isolated F3 and switched Narmada Hostel to feeder F2." },
+      { id: "s5", kind: "act", agent: "fault", at: "", summary: "Isolated F3 and switched GH1 to feeder F2." },
       { id: "s6", kind: "result", agent: "critic", at: "", summary: "96% of the hostel restored. Maintenance ticket raised for F3." },
     ],
     plans: [
@@ -118,7 +118,7 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     chosenPlanId: "B",
     chosenReason: "Restores power in seconds instead of 45 minutes, within feeder limits.",
     explanation:
-      "A cable fault cut power to Narmada Hostel. GridMind cut off the damaged cable so it is safe, then fed the hostel through a neighbouring cable that had spare room. Students lost power for only a few seconds.",
+      "A cable fault cut power to GH1. GridMind cut off the damaged cable so it is safe, then fed the hostel through a neighbouring cable that had spare room. Students lost power for only a few seconds.",
     usedMemory: { incidentId: "INC-40", summary: "8 May feeder fault: pre-check F2 capacity first." },
   },
   grid_outage: {
@@ -126,14 +126,14 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     trigger: "The main grid supply from the UPPCL substation was lost.",
     steps: [
       { id: "s1", kind: "observe", agent: "fault", at: "", summary: "Grid voltage lost. Campus is now running on solar and battery." },
-      { id: "s2", kind: "reason", agent: "commander", at: "", summary: "Battery can carry labs, library and admin for ~3.5 h, or every zone for ~1 h 40 min with hostels reduced." },
+      { id: "s2", kind: "reason", agent: "orchestrator", at: "", summary: "Battery can carry every building except the hostels for ~3.5 h, or every zone for ~1 h 40 min with hostels reduced." },
       { id: "s3", kind: "plan", agent: "planner", at: "", summary: "Tested 2 plans in the digital twin." },
       { id: "s4", kind: "safety", agent: "guardrail", at: "", summary: "Labs keep full power. Battery stays above 20%. High-impact: needs operator approval." },
-      { id: "s5", kind: "act", agent: "commander", at: "", summary: "Hostels restored at the approved level; battery powering the campus." },
+      { id: "s5", kind: "act", agent: "orchestrator", at: "", summary: "Hostels restored at the approved level; battery powering the campus." },
       { id: "s6", kind: "result", agent: "critic", at: "", summary: "All zones powered. Battery lasts ~1 h 40 min at this load, twice the last outage." },
     ],
     plans: [
-      { id: "A", title: "Keep hostels off", summary: "Power only labs, library and admin until the grid returns.", costInr: 0, risk: "medium", comfortPct: 40, actions: ["Hostels off", "Battery lasts ~3 h 30 min"] },
+      { id: "A", title: "Keep hostels off", summary: "Power everything except the hostels until the grid returns.", costInr: 0, risk: "medium", comfortPct: 40, actions: ["Hostels off", "Battery lasts ~3 h 30 min"] },
       { id: "B", title: "Hostels at 60%", summary: "Restore hostels at 60%: lights, fans and sockets, no AC.", costInr: 0, risk: "low", comfortPct: 78, actions: ["Hostels at 60%", "Battery lasts ~1 h 40 min"] },
     ],
     chosenPlanId: "B",

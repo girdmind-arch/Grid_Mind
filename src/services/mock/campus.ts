@@ -9,14 +9,16 @@ export { SIM_START } from "@/utils/simTime";
 
 // MOCK: zones and their demand at 17:20.
 export const ZONES: Zone[] = [
-  { id: "hostel-kaveri", name: "Kaveri Hostel", kind: "hostel", demandKw: 168, status: "normal", priority: "normal" },
-  { id: "hostel-godavari", name: "Godavari Hostel", kind: "hostel", demandKw: 154, status: "normal", priority: "normal" },
-  { id: "hostel-narmada", name: "Narmada Hostel", kind: "hostel", demandKw: 142, status: "normal", priority: "normal" },
-  { id: "hostel-ganga", name: "Ganga Hostel", kind: "hostel", demandKw: 131, status: "normal", priority: "normal" },
-  { id: "lab-electronics", name: "Electronics Lab", kind: "lab", demandKw: 236, status: "normal", priority: "critical" },
-  { id: "lab-biosciences", name: "Bio-Sciences Lab", kind: "lab", demandKw: 188, status: "normal", priority: "critical" },
-  { id: "library", name: "Central Library", kind: "library", demandKw: 121, status: "normal", priority: "high" },
-  { id: "admin", name: "Admin Block", kind: "admin", demandKw: 100, status: "normal", priority: "high" },
+  { id: "hostel-bh1", name: "BH1", kind: "hostel", demandKw: 150, status: "normal", priority: "normal" },
+  { id: "hostel-bh2", name: "BH2", kind: "hostel", demandKw: 138, status: "normal", priority: "normal" },
+  { id: "hostel-gh1", name: "GH1", kind: "hostel", demandKw: 128, status: "normal", priority: "normal" },
+  { id: "hostel-gh2", name: "GH2", kind: "hostel", demandKw: 116, status: "normal", priority: "normal" },
+  { id: "lab-electrical", name: "Electrical Lab", kind: "lab", demandKw: 196, status: "normal", priority: "critical" },
+  { id: "lab-cs", name: "Computer Science Lab", kind: "lab", demandKw: 164, status: "normal", priority: "critical" },
+  { id: "library", name: "Central Library", kind: "library", demandKw: 100, status: "normal", priority: "high" },
+  { id: "lecture-theatres", name: "Lecture Theatres", kind: "academic", demandKw: 70, status: "normal", priority: "high" },
+  { id: "admin", name: "Admin Block", kind: "admin", demandKw: 82, status: "normal", priority: "high" },
+  { id: "faculty-compound", name: "Faculty Compound", kind: "residence", demandKw: 96, status: "normal", priority: "normal" },
 ];
 
 // 2 MWh campus battery; 20–90% is the usable window set by the Guardrail.
