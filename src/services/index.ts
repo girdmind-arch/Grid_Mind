@@ -63,12 +63,12 @@ function withSeverity<T>(template: T, type: FaultRequest["type"], severity: numb
 }
 
 /**
- * Asks the Commander to run one observe→plan→act cycle and return its decision.
+ * Asks the Orchestrator to run one observe→plan→act cycle and return its decision.
  * High-impact decisions come back with approval.status "pending" and are NOT
  * applied until respondToApproval() is called.
  */
-export async function runCommanderStep(): Promise<Decision> {
-  if (!USE_MOCKS) return request<Decision>("/api/agents/commander/step", { method: "POST" });
+export async function runOrchestratorStep(): Promise<Decision> {
+  if (!USE_MOCKS) return request<Decision>("/api/agents/orchestrator/step", { method: "POST" });
   // MOCK: returns a pre-written decision for the active scenario. No AI is called.
   // Replays respond faster and cite the lesson from the previous run.
   const fault = currentFault();
@@ -256,7 +256,7 @@ export async function setControlMode(mode: ControlMode): Promise<ControlModeAck>
   return { mode, changedAt: simNow().toISOString(), message: message[mode] };
 }
 
-/** Sets the operator's goal in plain English; the Commander restates how it understood it. */
+/** Sets the operator's goal in plain English; the Orchestrator restates how it understood it. */
 export async function setGoal(goal: string): Promise<GoalAck> {
   if (!USE_MOCKS) return request<GoalAck>("/api/goal", { method: "POST", body: JSON.stringify({ goal }) });
   // MOCK: echoes the goal with a canned interpretation.
