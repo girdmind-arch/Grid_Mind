@@ -69,7 +69,8 @@ export function GridDiagram({ state, className }: { state: GridState; className?
   const L = width > 0 ? computeLayout(width) : null;
 
   const outage = state.activeFault?.type === "grid_outage";
-  const batteryKw = Math.max(0, -state.battery.powerKw);
+  const batteryKw = Math.max(0, -state.battery.powerKw); // discharging into the campus
+  const chargingKw = Math.max(0, state.battery.powerKw); // charging from the bus
   const maxKw = Math.max(400, state.demandKw / 2);
 
   // Left column: the 4 hostels; right column: labs, library, admin.
@@ -94,8 +95,8 @@ export function GridDiagram({ state, className }: { state: GridState; className?
       key: "battery",
       name: "Battery",
       value: `${state.battery.socPct}%`,
-      sub: batteryKw > 0 ? `Supplying ${formatKw(batteryKw)}` : state.battery.powerKw > 0 ? `Charging ${formatKw(state.battery.powerKw)}` : "Holding charge",
-      kw: batteryKw,
+      sub: batteryKw > 0 ? `Supplying ${formatKw(batteryKw)}` : chargingKw > 0 ? `Charging ${formatKw(chargingKw)}` : "Standby · ready",
+      kw: batteryKw || chargingKw,
       tone: "battery",
       icon: batteryKw > 0 ? <Battery /> : <BatteryCharging />,
       iconTone: "success",
@@ -115,7 +116,7 @@ export function GridDiagram({ state, className }: { state: GridState; className?
   ];
 
   const summary =
-    `Solar ${formatKw(state.solarKw)}, battery ${batteryKw ? `supplying ${formatKw(batteryKw)}` : "holding"}, ` +
+    `Solar ${formatKw(state.solarKw)}, battery ${batteryKw ? `supplying ${formatKw(batteryKw)}` : chargingKw ? `charging ${formatKw(chargingKw)}` : "on standby"}, ` +
     `grid ${outage ? "offline" : formatKw(state.gridImportKw)}. ` +
     ordered.map((z) => `${z.name} ${formatKw(z.demandKw)}${z.status !== "normal" ? ` (${z.status})` : ""}`).join(", ") +
     ".";
@@ -145,6 +146,7 @@ export function GridDiagram({ state, className }: { state: GridState; className?
                   kw={s.kw}
                   maxKw={maxKw}
                   tone={s.tone}
+                  reverse={s.key === "battery" && chargingKw > 0}
                 />
               ))}
               {ordered.map((z, i) => {

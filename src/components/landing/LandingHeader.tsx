@@ -6,7 +6,7 @@ import { Logo } from "@/components/layout/Logo";
 export const LANDING_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#agents", label: "Agents" },
-  { href: "#results", label: "Results" },
+  { href: "#start", label: "Start here" },
 ];
 
 /** Sticky site header: logo, section links (desktop), theme toggle, the demo button. */

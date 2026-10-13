@@ -1,11 +1,6 @@
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingHero } from "@/components/landing/LandingHero";
-import {
-  AgentsSection,
-  HowItWorksSection,
-  ProblemSection,
-  ResultsTeaserSection,
-} from "@/components/landing/LandingSections";
+import { AgentsSection, HowItWorksSection, StartHereSection } from "@/components/landing/LandingSections";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 
 /** The public website at "/": what GridMind is, in the order a judge reads it. */
@@ -21,10 +16,9 @@ export default function Landing() {
       <LandingHeader />
       <main id="main" className="flex-1">
         <LandingHero />
-        <ProblemSection />
         <HowItWorksSection />
         <AgentsSection />
-        <ResultsTeaserSection />
+        <StartHereSection />
       </main>
       <LandingFooter />
     </div>

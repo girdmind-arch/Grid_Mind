@@ -1,25 +1,48 @@
-import type { ReactNode } from "react";
-import { Link } from "react-router";
 import { Clock3, Lock, MapPin, Palette, Target } from "lucide-react";
-import { Card, IconTile, PageHeader, ThemeSwitcher } from "@/components/ui";
+import { PageHeader, Tabs, TabsContent, TabsList, TabsTrigger, ThemeSwitcher } from "@/components/ui";
 import { ControlModeHero } from "@/components/settings/ControlModeHero";
 import { GoalPresets } from "@/components/settings/GoalPresets";
 import { SimulationClock } from "@/components/settings/SimulationClock";
 import { CampusLocationPicker } from "@/components/settings/CampusLocationPicker";
 import { GuardrailRules } from "@/components/agents/GuardrailRules";
 
-function Section({ icon, title, description, children }: { icon: ReactNode; title: string; description: ReactNode; children: ReactNode }) {
-  return (
-    <Card>
-      <div className="flex items-center gap-2.5">
-        {icon}
-        <h2 className="text-base font-semibold text-fg">{title}</h2>
-      </div>
-      <p className="mt-2 mb-5 text-sm text-fg-muted">{description}</p>
-      {children}
-    </Card>
-  );
-}
+const TABS = [
+  {
+    value: "goal",
+    label: "Goal",
+    icon: Target,
+    description: "What the Commander should aim for.",
+    content: <GoalPresets />,
+  },
+  {
+    value: "location",
+    label: "Location",
+    icon: MapPin,
+    description: "Anywhere in India. Sets the live weather and the state's electricity tariff.",
+    content: <CampusLocationPicker />,
+  },
+  {
+    value: "clock",
+    label: "Clock",
+    icon: Clock3,
+    description: "Live follows real Indian time and today's weather. Demo evening starts at 17:20 and runs faster.",
+    content: <SimulationClock />,
+  },
+  {
+    value: "appearance",
+    label: "Appearance",
+    icon: Palette,
+    description: "System follows your device and switches with it.",
+    content: <ThemeSwitcher className="w-full max-w-md" />,
+  },
+  {
+    value: "guardrails",
+    label: "Guardrails",
+    icon: Lock,
+    description: "Hard safety rules. No agent, goal or mode can override them, so they cannot be edited here.",
+    content: <GuardrailRules columns={2} />,
+  },
+];
 
 export default function Settings() {
   return (
@@ -28,58 +51,24 @@ export default function Settings() {
 
       <ControlModeHero />
 
-      {/* Phones: goals, appearance, guardrails. Desktop: appearance sits in the right column. */}
-      <div className="mt-6 grid items-start gap-6 xl:grid-cols-12">
-        <div className="min-w-0 xl:col-span-8">
-          <Section
-            icon={<IconTile icon={<Target />} tone="ai" size="sm" />}
-            title="Goal presets"
-            description={
-              <>
-                Pick what the Commander should aim for. To type your own, use the goal card in the{" "}
-                <Link to="/app" className="font-semibold text-accent hover:text-accent-hover">
-                  Control Room
-                </Link>
-                .
-              </>
-            }
-          >
-            <GoalPresets />
-          </Section>
-        </div>
-        <div className="min-w-0 space-y-6 xl:col-span-4 xl:col-start-9 xl:row-start-1 xl:row-span-2">
-          <Section
-            icon={<IconTile icon={<MapPin />} tone="accent" size="sm" />}
-            title="Campus location"
-            description="Anywhere in India. Sets the live weather and the state's electricity tariff."
-          >
-            <CampusLocationPicker />
-          </Section>
-          <Section
-            icon={<IconTile icon={<Clock3 />} tone="ai" size="sm" />}
-            title="Simulation clock"
-            description="Live follows real Indian time and today's weather. Demo evening starts at 17:20 and runs faster."
-          >
-            <SimulationClock />
-          </Section>
-          <Section
-            icon={<IconTile icon={<Palette />} tone="accent" size="sm" />}
-            title="Appearance"
-            description="System follows your device and switches with it."
-          >
-            <ThemeSwitcher className="w-full" />
-          </Section>
-        </div>
-        <div className="min-w-0 xl:col-span-8">
-          <Section
-            icon={<IconTile icon={<Lock />} tone="success" size="sm" />}
-            title="Guardrails"
-            description="Hard safety rules. No agent, goal or mode can override them, so they cannot be edited here."
-          >
-            <GuardrailRules columns={2} />
-          </Section>
-        </div>
-      </div>
+      <Tabs defaultValue="goal" className="mt-6">
+        <TabsList aria-label="Settings">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <TabsTrigger key={t.value} value={t.value}>
+                <Icon strokeWidth={1.75} /> {t.label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+        {TABS.map((t) => (
+          <TabsContent key={t.value} value={t.value} className="max-w-4xl rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6">
+            <p className="mb-5 text-sm text-fg-muted">{t.description}</p>
+            {t.content}
+          </TabsContent>
+        ))}
+      </Tabs>
     </>
   );
 }

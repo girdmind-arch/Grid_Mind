@@ -3,8 +3,6 @@ import { Play } from "lucide-react";
 import { useScenarioStore } from "@/store/scenarioStore";
 import { Badge, Button, Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { AgentCard } from "@/components/agents/AgentCard";
-import { AgentLoop } from "@/components/agents/AgentLoop";
-import { GuardrailRules } from "@/components/agents/GuardrailRules";
 import { ThoughtTrace } from "@/components/agents/ThoughtTrace";
 import { useLiveAgents } from "@/components/agents/useLiveAgents";
 import { formatTime } from "@/utils/format";
@@ -21,15 +19,12 @@ export default function Agents() {
       : phase === "awaiting-approval"
         ? "The Guardrail paused a high-impact plan. It is waiting for your approval."
         : decisions[0]
-          ? `All agents are idle. Last decision at ${formatTime(decisions[0].startedAt)}: “${decisions[0].title}”.`
+          ? `All agents are idle. Last decision at ${formatTime(decisions[0].startedAt)}.`
           : "All agents are idle.";
-
-  const regular = agents?.filter((a) => a.id !== "guardrail") ?? [];
-  const guardrail = agents?.find((a) => a.id === "guardrail");
 
   return (
     <>
-      <PageHeader title="Agents" description="Who the agents are, what they are doing right now, and how they decide." />
+      <PageHeader title="Agents" description="The seven agents and what each one is doing right now." />
 
       <Card variant="hero" padding="lg">
         <Badge tone="onHero" size="sm" dot pulse={phase !== "idle" && phase !== "stable"}>
@@ -50,44 +45,25 @@ export default function Agents() {
 
       {status === "error" && !agents && <ErrorState className="mt-4" message={error ?? undefined} onRetry={retry} />}
 
-      {!agents && status !== "error" && (
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-64" />
-          ))}
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {agents
+          ? agents.map((a) => <AgentCard key={a.id} agent={a} />)
+          : status !== "error" && Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-64" />)}
+      </div>
+
+      {/* Folded away: the full reasoning behind every decision so far. */}
+      <details id="decisions" className="group mt-8 max-w-3xl rounded-lg border border-border bg-surface shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-base font-semibold text-fg [&::-webkit-details-marker]:hidden">
+          Decision history
+          <span className="text-sm font-medium text-fg-muted">
+            {decisions.length} {decisions.length === 1 ? "decision" : "decisions"} · <span className="text-accent group-open:hidden">Show</span>
+            <span className="hidden text-accent group-open:inline">Hide</span>
+          </span>
+        </summary>
+        <div className="border-t border-border p-5">
+          <ThoughtTrace />
         </div>
-      )}
-
-      {agents && (
-        <>
-          <div className="mt-4">
-            <AgentLoop agents={agents} />
-          </div>
-
-          <section aria-labelledby="roster-title" className="mt-8">
-            <h2 id="roster-title" className="mb-4 text-lg font-bold text-fg">
-              The team
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {regular.map((a) => (
-                <AgentCard key={a.id} agent={a} />
-              ))}
-              {guardrail && (
-                <AgentCard agent={guardrail} className="md:col-span-2 xl:col-span-3">
-                  <div className="mt-5 border-t border-border pt-4">
-                    <p className="mb-3 text-sm font-semibold text-fg">Hard rules no agent can override</p>
-                    <GuardrailRules columns={3} />
-                  </div>
-                </AgentCard>
-              )}
-            </div>
-          </section>
-        </>
-      )}
-
-      <section aria-label="Decision history" className="mt-8 max-w-3xl">
-        <ThoughtTrace />
-      </section>
+      </details>
     </>
   );
 }

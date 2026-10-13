@@ -7,7 +7,6 @@ import { useService } from "@/hooks/useService";
 import { useScenarioStore } from "@/store/scenarioStore";
 import { Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { IncidentTimeline } from "@/components/memory/IncidentTimeline";
-import { LessonsList } from "@/components/memory/LessonsList";
 import { SCENARIOS, SCENARIO_ORDER } from "@/components/scenarios/scenarioMeta";
 import { cn } from "@/utils/cn";
 
@@ -43,7 +42,7 @@ export default function Memory() {
 
   return (
     <>
-      <PageHeader title="Memory" description="Every incident GridMind has handled, and what it learned from each one." />
+      <PageHeader title="Memory" description="Every incident GridMind has handled, and the lesson it took from each." />
 
       <Card variant="hero" padding="lg">
         <h2 className="max-w-2xl text-[26px] leading-tight font-bold tracking-tight sm:text-[30px]">
@@ -74,8 +73,8 @@ export default function Memory() {
 
       {memory.status === "error" && !memory.data && <ErrorState className="mt-4" message={memory.error} onRetry={memory.retry} />}
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-12">
-        <section aria-labelledby="timeline-title" className="min-w-0 xl:col-span-8">
+      <div className="mt-8 max-w-4xl">
+        <section aria-labelledby="timeline-title" className="min-w-0">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 id="timeline-title" className="text-lg font-bold text-fg">
               Incident timeline
@@ -122,14 +121,6 @@ export default function Memory() {
             </Card>
           )}
         </section>
-
-        <div className="min-w-0 xl:col-span-4">
-          {memory.data ? (
-            <LessonsList lessons={lessons} sessionIds={sessionIds} className="xl:sticky xl:top-[calc(var(--topbar-h)+16px)]" />
-          ) : (
-            <Skeleton className="h-80" />
-          )}
-        </div>
       </div>
     </>
   );

@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { Clock3, Download, IndianRupee, TrendingDown } from "lucide-react";
 import type { Results as ResultsData } from "@/types/agents";
-import { getResults, getRunHistory } from "@/services";
+import { getResults } from "@/services";
 import { useService } from "@/hooks/useService";
-import { useScenarioStore } from "@/store/scenarioStore";
-import { Button, ErrorState, PageHeader, Skeleton } from "@/components/ui";
+import { Button, ErrorState, PageHeader, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui";
 import { ResultsHero } from "@/components/results/ResultsHero";
 import { CostChart, PeakChart, RecoveryChart } from "@/components/results/ComparisonCharts";
-import { RunImprovement } from "@/components/results/RunImprovement";
 import { WhatIfPanel } from "@/components/results/WhatIfPanel";
 import { formatDate, formatNumber } from "@/utils/format";
 import { simNow } from "@/utils/simTime";
@@ -15,8 +13,6 @@ import { printPage } from "@/utils/printPage";
 
 export default function Results() {
   const results = useService(getResults);
-  const runHistory = useService(getRunHistory);
-  const sessionRuns = useScenarioStore((s) => s.history);
   // A what-if run replaces the numbers until the operator goes back to the real campus.
   const [whatIf, setWhatIf] = useState<ResultsData | null>(null);
   const base = whatIf ?? results.data;
@@ -51,32 +47,43 @@ export default function Results() {
       {!data && results.status === "loading" && (
         <div className="space-y-6">
           <Skeleton className="h-80" />
-          <div className="grid gap-6 xl:grid-cols-2">
-            <Skeleton className="h-96" />
-            <Skeleton className="h-96" />
-          </div>
+          <Skeleton className="h-96" />
         </div>
       )}
 
       {data && (
         <>
           <ResultsHero results={data} />
+          {/* One chart at a time on screen; the PDF prints all three. */}
+          <Tabs defaultValue="cost" className="mt-6">
+            <TabsList aria-label="Compare" className="print:hidden">
+              <TabsTrigger value="cost">
+                <IndianRupee strokeWidth={1.75} /> Cost
+              </TabsTrigger>
+              <TabsTrigger value="peak">
+                <TrendingDown strokeWidth={1.75} /> Peak
+              </TabsTrigger>
+              <TabsTrigger value="recovery">
+                <Clock3 strokeWidth={1.75} /> Recovery
+              </TabsTrigger>
+            </TabsList>
+            {(
+              [
+                ["cost", <CostChart data={data.cost} />],
+                ["peak", <PeakChart data={data.peak} />],
+                ["recovery", <RecoveryChart data={data.recovery} />],
+              ] as const
+            ).map(([value, chart]) => (
+              <TabsContent key={value} value={value} forceMount className="data-[state=inactive]:hidden print:mt-6 print:data-[state=inactive]:block">
+                {chart}
+              </TabsContent>
+            ))}
+          </Tabs>
           <div className="mt-6">
             <WhatIfPanel
               key={results.data?.settings ? JSON.stringify(results.data.settings) : "default"}
               defaults={results.data?.settings}
               onResults={(r) => setWhatIf(r)}
-            />
-          </div>
-          <div className="mt-6 grid gap-6 xl:grid-cols-2 print:block print:space-y-6">
-            <CostChart data={data.cost} />
-            <PeakChart data={data.peak} />
-            <RecoveryChart data={data.recovery} />
-            <RunImprovement
-              runs={data.runs}
-              baselineMin={data.headline.recovery.baselineMin}
-              history={runHistory.data}
-              sessionRuns={sessionRuns}
             />
           </div>
         </>
