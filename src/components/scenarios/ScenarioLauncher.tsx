@@ -111,10 +111,7 @@ export function ScenarioLauncher({ onRun, disabled, className }: ScenarioLaunche
         ) : (
           <Button
             size="sm"
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-              void startTour();
-            }}
+            onClick={() => void startTour()}
             disabled={disabled}
           >
             <MonitorPlay /> Presentation mode

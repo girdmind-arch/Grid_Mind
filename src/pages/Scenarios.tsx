@@ -26,11 +26,18 @@ export default function Scenarios() {
     void loadTrace();
   }, [loadTrace]);
 
-  const start = (type: FaultType, severity = 3, durationMin = 30) => {
-    void startFresh(type, { severity, durationMin });
-    // Bring the live response into view (top of the page).
+  // Bring each new incident's live response into view, however it was started
+  // (a card, the launcher or Presentation mode). Runs once the banner exists,
+  // so the clear-then-run layout change can't cancel the scroll.
+  const incidentId = active?.incidentId;
+  useEffect(() => {
+    if (!incidentId) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  }, [incidentId]);
+
+  const start = (type: FaultType, severity = 3, durationMin = 30) => {
+    void startFresh(type, { severity, durationMin });
   };
 
   return (
