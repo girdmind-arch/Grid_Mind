@@ -4,7 +4,7 @@ import { Button, EmptyState } from "@/components/ui";
 
 export default function NotFound() {
   return (
-    <div className="grid min-h-dvh place-items-center bg-bg px-[var(--gutter)]">
+    <div className="grid min-h-dvh place-items-center px-[var(--gutter)]">
       <EmptyState
         icon={<Compass />}
         tone="accent"
