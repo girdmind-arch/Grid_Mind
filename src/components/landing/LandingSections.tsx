@@ -63,8 +63,8 @@ export function AgentsSection() {
     <LandingSection
       id="agents"
       eyebrow="The agents"
-      title="Seven agents, one Commander."
-      description="Each agent has one job and a small set of tools. The Commander brings their answers together and explains the decision."
+      title="Seven agents, one Orchestrator."
+      description="Each agent has one job and a small set of tools. The Orchestrator brings their answers together and explains the decision."
     >
       {!agents.data ? (
         <Skeleton className="h-12" />

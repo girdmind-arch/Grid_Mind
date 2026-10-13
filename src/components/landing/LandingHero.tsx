@@ -21,7 +21,7 @@ export function LandingHero() {
 
   return (
     <div className="mx-auto w-full max-w-[var(--content-max)] px-[var(--gutter)] pt-6 sm:pt-10 lg:px-[var(--gutter-lg)]">
-      <section aria-labelledby="hero-title" className="overflow-hidden rounded-xl bg-hero text-hero-text shadow-hero">
+      <section aria-labelledby="hero-title" className="overflow-hidden rounded-xl border border-white/10 bg-hero text-hero-text shadow-hero">
         <div className="grid items-center gap-10 p-6 sm:p-10 lg:grid-cols-[1fr_1.05fr] lg:gap-12 lg:p-14">
           <div className="min-w-0">
             <span className="inline-flex rounded-full bg-white/16 px-3 py-1 text-[13px] font-semibold">BITSETGO'26 · Agentic AI & ML</span>
@@ -41,7 +41,7 @@ export function LandingHero() {
           </div>
 
           {/* Live preview: the same diagram and data as the Control Room. */}
-          <div className="min-w-0 rounded-lg border border-border bg-surface p-4 text-fg shadow-lg sm:p-5">
+          <div className="min-w-0 glass rounded-lg border border-glass-border bg-surface-raised p-4 text-fg shadow-lg sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold">Campus grid · right now</p>
               <Badge tone="success" size="sm" dot pulse>
@@ -51,10 +51,10 @@ export function LandingHero() {
             {grid.data ? (
               <GridDiagram state={grid.data} />
             ) : (
-              <Skeleton className="h-[380px]" />
+              <Skeleton className="h-[470px]" />
             )}
             <p className="mt-3 text-[13px] text-fg-subtle">
-              Simulated campus · 4 hostels, 2 labs, library, admin block
+              Simulated campus · 4 hostels, 2 labs, library, lecture theatres, admin block, faculty compound
               {env && env.weatherSource === "open-meteo" && ` · live weather, ${env.location} ${Math.round(env.temperatureC)}°C`}
             </p>
           </div>
