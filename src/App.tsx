@@ -4,6 +4,7 @@ import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { Toaster } from "@/components/ui";
 import { AppShell } from "@/components/layout/AppShell";
+import { GridBackdrop } from "@/components/layout/GridBackdrop";
 import Landing from "@/pages/Landing";
 import NotFound from "@/pages/NotFound";
 
@@ -42,6 +43,7 @@ export default function App() {
     <ThemeProvider>
       {/* reducedMotion="user": Framer Motion respects prefers-reduced-motion */}
       <MotionConfig reducedMotion="user">
+        <GridBackdrop />
         <RouterProvider router={router} />
         <Toaster />
       </MotionConfig>
