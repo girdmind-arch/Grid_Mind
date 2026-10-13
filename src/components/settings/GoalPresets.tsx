@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { BatteryFull, CloudLightning, IndianRupee, Loader2, Scale, Thermometer } from "lucide-react";
+import { BatteryFull, CloudLightning, IndianRupee, Loader2, Scale, Send, Thermometer } from "lucide-react";
 import { setGoal as setGoalService } from "@/services";
 import { DEFAULT_GOAL, useAppStore } from "@/store/appStore";
-import { IconTile, toast } from "@/components/ui";
+import { Button, IconTile, toast } from "@/components/ui";
 import { cn } from "@/utils/cn";
 
 const PRESETS = [
@@ -19,6 +19,7 @@ export function GoalPresets() {
   const interpretation = useAppStore((s) => s.goalInterpretation);
   const saveGoal = useAppStore((s) => s.setGoal);
   const [sending, setSending] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
 
   const pick = async (id: string, text: string) => {
     if (text === goal || sending) return;
@@ -68,6 +69,30 @@ export function GoalPresets() {
           );
         })}
       </ul>
+
+      {/* Or say it in your own words. */}
+      <form
+        className="mt-4 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const text = draft.trim();
+          if (text) void pick("custom", text).then(() => setDraft(""));
+        }}
+      >
+        <label htmlFor="goal-input" className="sr-only">
+          Your own goal
+        </label>
+        <input
+          id="goal-input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Or type your own goal…"
+          className="h-11 min-w-0 flex-1 rounded-md border border-border-strong bg-surface px-3 text-[15px] text-fg placeholder:text-fg-subtle"
+        />
+        <Button type="submit" variant="primary" size="icon" aria-label="Send goal" disabled={!draft.trim() || !!sending} className="size-11">
+          {sending === "custom" ? <Loader2 className="animate-spin" /> : <Send />}
+        </Button>
+      </form>
 
       <div aria-live="polite" className="mt-4 rounded-md bg-surface-sunken px-4 py-3 text-sm">
         <p className="text-fg">

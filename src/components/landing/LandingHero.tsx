@@ -29,8 +29,7 @@ export function LandingHero() {
               A control room that thinks, acts, and explains.
             </h1>
             <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-hero-text-muted">
-              GridMind's AI agents run a campus microgrid of solar, battery and the main grid. They forecast demand, test every
-              plan in a digital twin, act within hard safety rules, explain why, and learn from each incident.
+              AI agents run a campus microgrid of solar, battery and the main grid, and tell you why at every step.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild variant="onHero" size="lg">

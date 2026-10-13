@@ -1,80 +1,21 @@
 import { Link } from "react-router";
 import {
+  Activity,
   ArrowRight,
   BrainCircuit,
   ChartSpline,
-  Clock3,
-  FlaskConical,
   GitCompareArrows,
   GraduationCap,
-  IndianRupee,
   ShieldCheck,
-  Sun,
   TrendingDown,
-  TriangleAlert,
+  Zap,
 } from "lucide-react";
 import { getAgents, getResults } from "@/services";
 import { useService } from "@/hooks/useService";
-import { Badge, Button, Card, IconTile, Skeleton } from "@/components/ui";
+import { Card, IconTile, Skeleton } from "@/components/ui";
 import { AGENT_LOOK } from "@/components/agents/agentMeta";
 import { formatNumber } from "@/utils/format";
 import { LandingSection } from "./LandingSection";
-
-// ---------- The problem ----------
-
-// PLACEHOLDER: figures to be replaced with cited public sources before submission.
-const PROBLEM = [
-  {
-    icon: IndianRupee,
-    tone: "warning" as const,
-    value: "~35%",
-    label: "of a campus power bill is paid in the 18:00–22:00 peak, at the highest tariff slab.",
-  },
-  {
-    icon: Sun,
-    tone: "solar" as const,
-    value: "1 in 5",
-    label: "solar units is wasted or sold cheaply at midday, when the campus cannot use it.",
-  },
-  {
-    icon: TriangleAlert,
-    tone: "danger" as const,
-    value: "15+ min",
-    label: "to restore power after a line fault when operators reroute by hand.",
-  },
-];
-
-export function ProblemSection() {
-  return (
-    <LandingSection
-      id="problem"
-      eyebrow="The problem"
-      title="Campus grids are run by hand, one alarm at a time."
-      description="Solar, a battery and the main grid could cover the evening peak cheaply. Without planning, they don't."
-    >
-      <ul className="grid gap-4 md:grid-cols-3">
-        {PROBLEM.map((p) => {
-          const Icon = p.icon;
-          return (
-            <li key={p.value}>
-              <Card className="h-full">
-                <div className="flex items-center justify-between gap-3">
-                  <IconTile icon={<Icon />} tone={p.tone} />
-                  <Badge tone="neutral" size="sm">
-                    Placeholder figure
-                  </Badge>
-                </div>
-                <p className="mt-5 font-mono text-[34px] leading-none font-semibold tracking-[-0.03em] text-fg">{p.value}</p>
-                <p className="mt-3 text-[15px] text-fg-muted">{p.label}</p>
-              </Card>
-            </li>
-          );
-        })}
-      </ul>
-      <p className="mt-4 text-sm text-fg-subtle">Figures are illustrative placeholders until sources are added.</p>
-    </LandingSection>
-  );
-}
 
 // ---------- How it works ----------
 
@@ -126,97 +67,85 @@ export function AgentsSection() {
       description="Each agent has one job and a small set of tools. The Commander brings their answers together and explains the decision."
     >
       {!agents.data ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-36" />
-          ))}
-        </div>
+        <Skeleton className="h-12" />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <ul className="flex flex-wrap gap-2.5">
           {agents.data.map((a) => {
             const look = AGENT_LOOK[a.id];
             const Icon = look.icon;
             return (
-              <li key={a.id}>
-                <Card className="h-full">
-                  <IconTile icon={<Icon />} tone={look.tone} />
-                  <h3 className="mt-4 text-base font-semibold text-fg">{a.name}</h3>
-                  <p className="mt-1 text-[15px] text-fg-muted">{a.role}</p>
-                </Card>
+              <li key={a.id} title={a.role} className="inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1.5 pr-4 pl-1.5 text-[15px] font-semibold text-fg shadow-sm">
+                <IconTile icon={<Icon />} tone={look.tone} size="sm" className="rounded-full" />
+                {a.name}
               </li>
             );
           })}
-          <li>
-            <Link
-              to="/app/agents"
-              className="flex h-full min-h-36 flex-col justify-between rounded-lg border border-dashed border-border-strong p-5 text-accent transition-colors hover:bg-surface sm:p-6"
-            >
-              <BrainCircuit aria-hidden strokeWidth={1.75} className="size-6" />
-              <span className="flex items-center gap-1.5 font-semibold">
-                Watch them think <ArrowRight aria-hidden strokeWidth={1.75} className="size-4" />
-              </span>
-            </Link>
-          </li>
         </ul>
       )}
+      <Link to="/app/agents" className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-accent-hover">
+        <BrainCircuit aria-hidden strokeWidth={1.75} className="size-4" /> Watch them think <ArrowRight aria-hidden strokeWidth={1.75} className="size-4" />
+      </Link>
     </LandingSection>
   );
 }
 
-// ---------- Results teaser ----------
+// ---------- Start here ----------
 
-export function ResultsTeaserSection() {
+/** Three doors into the app, each with one live number and one action. */
+export function StartHereSection() {
   const results = useService(getResults);
   const r = results.data;
-  const stats = r
-    ? [
-        { icon: IndianRupee, value: `${formatNumber(r.headline.costSavedPct, 1)}%`, label: "lower electricity cost" },
-        { icon: TrendingDown, value: `${formatNumber(r.headline.peakReducedPct, 1)}%`, label: "lower evening peak" },
-        {
-          icon: Clock3,
-          value: `${formatNumber(r.headline.recovery.gridmindMin, 1)} min`,
-          label: `fault recovery, vs ${formatNumber(r.headline.recovery.baselineMin)} min without AI`,
-        },
-      ]
-    : [];
+  const doors = [
+    {
+      to: "/app",
+      icon: Activity,
+      tone: "success" as const,
+      title: "Control Room",
+      text: "See the campus grid right now and the agents' latest decision.",
+      cta: "Open the Control Room",
+    },
+    {
+      to: "/app/scenarios",
+      icon: Zap,
+      tone: "warning" as const,
+      title: "Scenarios",
+      text: "Break something on purpose and watch the agents respond.",
+      cta: "Run a scenario",
+    },
+    {
+      to: "/app/results",
+      icon: TrendingDown,
+      tone: "accent" as const,
+      title: "Results",
+      text: r
+        ? `${formatNumber(r.headline.costSavedPct, 1)}% lower cost and ${formatNumber(r.headline.peakReducedPct, 1)}% lower evening peak than with no AI.`
+        : "Compared with the same campus run without AI.",
+      cta: "See the results",
+    },
+  ];
 
   return (
-    <LandingSection
-      id="results"
-      eyebrow="Results"
-      title="Measured against the same campus with no AI."
-      description={
-        <span className="inline-flex items-start gap-2">
-          <FlaskConical aria-hidden strokeWidth={1.75} className="mt-1 size-4 shrink-0" />
-          {r?.dataNote ?? "Simulated campus calibrated on public data."}
-        </span>
-      }
-    >
-      {!r ? (
-        <Skeleton className="h-40" />
-      ) : (
-        <Card padding="none">
-          <dl className="grid divide-y divide-border md:grid-cols-3 md:divide-x md:divide-y-0">
-            {stats.map((s) => {
-              const Icon = s.icon;
-              return (
-                <div key={s.label} className="p-6 sm:p-8">
-                  <dt className="flex items-center gap-2 text-[15px] text-fg-muted">
-                    <Icon aria-hidden strokeWidth={1.75} className="size-4 text-success" />
-                    {s.label}
-                  </dt>
-                  <dd className="mt-2 font-mono text-[40px] leading-none font-semibold tracking-[-0.04em] text-fg">{s.value}</dd>
-                </div>
-              );
-            })}
-          </dl>
-        </Card>
-      )}
-      <Button asChild variant="secondary" className="mt-6">
-        <Link to="/app/results">
-          See how it was measured <ArrowRight />
-        </Link>
-      </Button>
+    <LandingSection id="start" eyebrow="Start here" title="Three places to look.">
+      <ul className="grid gap-4 md:grid-cols-3">
+        {doors.map((d) => {
+          const Icon = d.icon;
+          return (
+            <li key={d.to}>
+              <Link
+                to={d.to}
+                className="group flex h-full flex-col rounded-lg border border-border bg-surface p-5 shadow-sm transition-[border-color,box-shadow] hover:border-accent/50 hover:shadow-md sm:p-6"
+              >
+                <IconTile icon={<Icon />} tone={d.tone} />
+                <h3 className="mt-4 text-lg font-semibold text-fg">{d.title}</h3>
+                <p className="mt-1.5 flex-1 text-[15px] text-fg-muted">{d.text}</p>
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent group-hover:text-accent-hover">
+                  {d.cta} <ArrowRight aria-hidden strokeWidth={1.75} className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </LandingSection>
   );
 }

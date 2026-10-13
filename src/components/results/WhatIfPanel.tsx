@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FlaskConical, Loader2, RotateCcw } from "lucide-react";
+import { ChevronDown, FlaskConical, Loader2, RotateCcw } from "lucide-react";
 import type { Results, WhatIfSettings } from "@/types/agents";
 import { USE_MOCKS, ServiceError, runWhatIf } from "@/services";
 import { Button, IconTile, toast } from "@/components/ui";
@@ -51,11 +51,12 @@ export function WhatIfPanel({
   };
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6 print:hidden">
-      <div className="flex items-center gap-2.5">
+    <details className="group rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6 print:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 [&::-webkit-details-marker]:hidden">
         <IconTile icon={<FlaskConical />} tone="ai" size="sm" />
         <h2 className="text-base font-semibold text-fg">What if the campus were different?</h2>
-      </div>
+        <ChevronDown aria-hidden strokeWidth={1.75} className="ml-auto size-5 shrink-0 text-fg-muted transition-transform group-open:rotate-180" />
+      </summary>
       <p className="mt-2 text-sm text-fg-muted">
         {USE_MOCKS
           ? "Needs the live backend: there, every change re-simulates all five days minute by minute."
@@ -101,6 +102,6 @@ export function WhatIfPanel({
           </Button>
         )}
       </div>
-    </section>
+    </details>
   );
 }
