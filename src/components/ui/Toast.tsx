@@ -36,7 +36,7 @@ export function Toaster() {
               exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               role="status"
-              className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-border bg-surface-raised p-4 shadow-lg"
+              className="pointer-events-auto flex w-full max-w-sm items-start gap-3 glass-strong rounded-lg border border-glass-border bg-surface-solid/92 p-4 shadow-lg"
             >
               <Icon aria-hidden className={cn("mt-0.5 size-5 shrink-0", className)} />
               <div className="min-w-0 flex-1">

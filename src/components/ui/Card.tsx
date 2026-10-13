@@ -5,12 +5,12 @@ import { cn } from "@/utils/cn";
 const cardVariants = cva("rounded-lg border", {
   variants: {
     variant: {
-      default: "border-border bg-surface shadow-sm",
-      raised: "border-border bg-surface-raised shadow-md",
+      default: "glass border-glass-border bg-surface shadow-md",
+      raised: "glass border-glass-border bg-surface-raised shadow-lg",
       /** Flat, for nested areas inside a card. */
       sunken: "border-transparent bg-surface-sunken",
       /** The gradient hero. Only ONE per screen. */
-      hero: "border-transparent bg-hero shadow-hero",
+      hero: "border-white/10 bg-hero shadow-hero",
     },
     interactive: {
       true: "transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md motion-reduce:hover:translate-y-0",

@@ -35,7 +35,7 @@ export function SegmentedControl<T extends string>({ label, options, value, onCh
             className={cn(
               "relative flex h-10 cursor-pointer items-center justify-center gap-2 rounded-sm px-3 text-sm font-semibold pointer-coarse:h-11",
               "transition-colors duration-150 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus [&_svg]:size-4",
-              checked ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg",
+              checked ? "bg-surface-raised text-fg shadow-sm" : "text-fg-muted hover:text-fg",
             )}
           >
             <input
