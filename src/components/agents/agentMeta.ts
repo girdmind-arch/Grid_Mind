@@ -1,9 +1,9 @@
-import { Boxes, BrainCircuit, Building, ChartSpline, CircleCheckBig, ClipboardCheck, Crown, Eye, GitCompareArrows, Play, ShieldCheck, Siren } from "lucide-react";
+import { Boxes, BrainCircuit, Building, ChartSpline, CircleCheckBig, ClipboardCheck, Eye, GitCompareArrows, Play, ShieldCheck, Siren, Workflow } from "lucide-react";
 import type { IconTileTone } from "@/components/ui/IconTile";
 import type { AgentId, AgentStatus, TraceStepKind } from "@/types/agents";
 
 export const AGENT_NAMES: Record<AgentId, string> = {
-  commander: "Commander",
+  orchestrator: "Orchestrator",
   forecaster: "Forecaster",
   zone: "Zone Agents",
   planner: "Planner",
@@ -24,7 +24,7 @@ export const STEP_META: Record<TraceStepKind, { label: string; icon: typeof Eye 
 
 /** Icon and tint per agent, used everywhere an agent appears. */
 export const AGENT_LOOK: Record<AgentId, { icon: typeof Eye; tone: IconTileTone }> = {
-  commander: { icon: Crown, tone: "ai" },
+  orchestrator: { icon: Workflow, tone: "ai" },
   forecaster: { icon: ChartSpline, tone: "solar" },
   zone: { icon: Building, tone: "accent" },
   planner: { icon: Boxes, tone: "ai" },

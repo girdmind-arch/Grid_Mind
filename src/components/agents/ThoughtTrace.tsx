@@ -36,7 +36,7 @@ export function ThoughtTrace({ className, limit }: { className?: string; limit?:
       <div aria-live="polite" className="space-y-3">
         {thinking && (
           <div className="rounded-lg border border-ai/40 bg-ai/6 p-3.5 shadow-glow-ai">
-            <p className="micro-label mb-2.5 text-ai">Commander is working</p>
+            <p className="micro-label mb-2.5 text-ai">Orchestrator is working</p>
             <ThinkingSteps stepMs={750} />
           </div>
         )}
