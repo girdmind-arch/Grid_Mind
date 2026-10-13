@@ -33,7 +33,7 @@ export function GridNode({ name, value, sub, icon, tone, state = "normal", prote
     <div
       style={style}
       className={cn(
-        "absolute flex items-center gap-2.5 rounded-md border bg-surface-raised px-3 shadow-sm transition-[border-color,box-shadow,background-color] duration-300",
+        "glass absolute flex items-center gap-2.5 rounded-lg border bg-surface-raised px-3 shadow-sm transition-[border-color,box-shadow,background-color] duration-300",
         state === "normal" && "border-border",
         state === "idle" && "border-border",
         state === "reduced" && "border-warning/50",
@@ -42,7 +42,7 @@ export function GridNode({ name, value, sub, icon, tone, state = "normal", prote
     >
       {!compact && <IconTile icon={icon} tone={state === "faulted" ? "danger" : tone} size="sm" />}
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1 text-sm leading-tight font-semibold text-fg">
+        <p className={cn("flex items-center gap-1 leading-tight font-semibold text-fg", compact ? "text-[13px] tracking-[-0.01em]" : "text-sm")}>
           <span className={compact ? "line-clamp-2" : "truncate"}>{name}</span>
           {protectedZone && (
             <ShieldCheck aria-label="Protected: labs never lose power" className="size-3.5 shrink-0 text-success" />
