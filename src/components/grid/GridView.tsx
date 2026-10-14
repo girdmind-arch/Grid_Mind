@@ -35,11 +35,13 @@ class Fallback extends Component<{ fallback: ReactNode; children: ReactNode }, {
  * The live grid, as a 3D campus model (default) or the flat plan. The choice
  * is remembered on this device. Screen readers get the plan's text summary.
  */
-export function GridView({ state, className, compactToggle }: { state: GridState; className?: string; compactToggle?: boolean }) {
+export function GridView({ state, className, compactToggle, large }: { state: GridState; className?: string; compactToggle?: boolean; large?: boolean }) {
   const canGl = webglAvailable();
   const [view, setView] = useState<View>(() => (canGl ? readView() : "plan"));
   const narrow = useMediaQuery("(max-width: 639px)");
-  const height = narrow ? 500 : 460;
+  const desktop = useMediaQuery("(min-width: 1024px)");
+  // `large` is the Control Room's main view: taller, so buildings and labels have room.
+  const height = large ? (narrow ? 520 : desktop ? 680 : 560) : narrow ? 500 : 460;
 
   const choose = (v: View) => {
     setView(v);

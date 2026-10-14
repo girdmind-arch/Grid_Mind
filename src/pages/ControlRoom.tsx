@@ -72,23 +72,22 @@ export default function ControlRoom() {
         )}
       </div>
 
-      <div className="mt-4 grid items-start gap-4 xl:grid-cols-12">
-        <Card className="min-w-0 xl:col-span-8">
-          <div className="mb-5 flex items-center gap-2.5">
-            <IconTile icon={<Activity />} tone="accent" size="sm" />
-            <h2 className="text-base font-semibold text-fg">Live grid</h2>
-            <Badge tone="success" size="sm" dot pulse className="ml-auto">
-              Live
-            </Badge>
-          </div>
-          {grid.data ? <GridView state={grid.data} /> : <Skeleton className="h-[460px]" />}
-        </Card>
-        <LatestDecision decision={shownDecision} className="min-w-0 xl:col-span-4" />
-      </div>
+      <Card className="mt-4 min-w-0">
+        <div className="mb-5 flex items-center gap-2.5">
+          <IconTile icon={<Activity />} tone="accent" size="sm" />
+          <h2 className="text-base font-semibold text-fg">Live grid</h2>
+          <Badge tone="success" size="sm" dot pulse className="ml-auto">
+            Live
+          </Badge>
+        </div>
+        {grid.data ? <GridView state={grid.data} large /> : <Skeleton className="h-[520px] sm:h-[560px] lg:h-[680px]" />}
+      </Card>
+
+      <LatestDecision decision={shownDecision} className="mt-4 min-w-0" />
 
       <Modal open={gridOpen} onOpenChange={setGridOpen} title="Live grid" description={systemSummary(grid.data)} variant="full">
         <div className="mx-auto w-full max-w-5xl py-2">
-          {grid.data && <GridView state={grid.data} />}
+          {grid.data && <GridView state={grid.data} large />}
           <GridLegend className="mt-6" />
         </div>
       </Modal>
