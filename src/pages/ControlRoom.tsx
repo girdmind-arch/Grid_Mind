@@ -80,7 +80,7 @@ export default function ControlRoom() {
             Live
           </Badge>
         </div>
-        {grid.data ? <GridView state={grid.data} large /> : <Skeleton className="h-[520px] sm:h-[560px] lg:h-[680px]" />}
+        {grid.data ? <GridView state={grid.data} large /> : <Skeleton className="h-[450px] sm:h-[520px] lg:h-[600px]" />}
       </Card>
 
       <LatestDecision decision={shownDecision} className="mt-4 min-w-0" />
