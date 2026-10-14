@@ -66,6 +66,7 @@ class LiveGrid:
         self._wall = wall
         self._lock = threading.RLock()
         self.mode = "ai"  # ai | fallback | manual
+        self.mode_since = self._wall()  # when a non-AI mode was switched on
         self.fault: Fault | None = None
         self.incident_counter = 41
         self.clock_mode = clock_mode or os.environ.get("GRIDNOVA_CLOCK", "live")
@@ -233,6 +234,19 @@ class LiveGrid:
         with self._lock:
             self._advance()
             self.mode = mode
+            self.mode_since = self._wall()
+
+    def expire_mode(self, ttl_s: float) -> bool:
+        """Hands control back to the agents once a Fallback / Manual switch has been left on too long.
+
+        The backend is shared by every visitor, so one person leaving Manual on would
+        otherwise silence the agents for everyone, indefinitely. Returns True if it reset.
+        """
+        with self._lock:
+            if self.mode != "ai" and ttl_s > 0 and self._wall() - self.mode_since >= ttl_s:
+                self.mode = "ai"
+                return True
+            return False
 
     # ---------- reporting ----------
     def environment(self) -> dict:
