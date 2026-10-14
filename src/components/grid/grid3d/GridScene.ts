@@ -839,7 +839,7 @@ export class GridScene {
     const target = box.getCenter(new THREE.Vector3());
     target.y = 0.4;
     const dir = (this.narrow ? new THREE.Vector3(-0.06, 0.9, 0.44) : new THREE.Vector3(-0.12, 0.74, 0.66)).normalize();
-    const margin = this.narrow ? 0.95 : 0.93;
+    const margin = this.narrow ? 0.985 : 0.99;
     const place = (d: number) => {
       this.camera.position.copy(target).add(dir.clone().multiplyScalar(d));
       this.camera.lookAt(target);
