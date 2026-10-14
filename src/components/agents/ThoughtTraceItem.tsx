@@ -168,7 +168,7 @@ function WhyButton({ decision }: { decision: Decision }) {
       <p className="mt-3 text-xs text-fg-subtle">
         {USE_MOCKS
           ? "Demo explanation: pre-written until the agent backend is connected."
-          : "Explanation built by the Commander from its digital-twin results."}
+          : "Explanation built by the Orchestrator from its digital-twin results."}
       </p>
     </Modal>
   );

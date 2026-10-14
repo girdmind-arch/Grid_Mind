@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import type { FaultRequest, FaultType, GridState } from "@/types/grid";
 import type { ApprovalResponse, Decision, Incident, Lesson, ScenarioOutcome } from "@/types/agents";
-import { USE_MOCKS, clearScenario, getGridState, getThoughtTrace, injectFault, respondToApproval, runCommanderStep } from "@/services";
+import { USE_MOCKS, clearScenario, getGridState, getThoughtTrace, injectFault, respondToApproval, runOrchestratorStep } from "@/services";
 import { play } from "@/utils/sound";
 import { useAppStore } from "./appStore";
 import { toast } from "./toastStore";
 
 // The live loop shown on the Control Room (and later the Scenarios page):
-//   scenario fires → grid reacts → Commander thinks → (approval?) → stable.
+//   scenario fires → grid reacts → Orchestrator thinks → (approval?) → stable.
 // All data still comes from the service layer; this store only orchestrates it.
 
 export type ScenarioPhase = "idle" | "responding" | "awaiting-approval" | "stable";
@@ -31,7 +31,7 @@ interface ScenarioState {
   gridVersion: number;
   /** Bumped every few seconds with the live backend, so live views refresh. */
   liveTick: number;
-  /** True while the Commander is thinking (shows ThinkingSteps). */
+  /** True while the Orchestrator is thinking (shows ThinkingSteps). */
   thinking: boolean;
   /** Outcome of every run this session, per scenario type (oldest first). */
   history: Partial<Record<FaultType, ScenarioOutcome[]>>;
@@ -164,7 +164,7 @@ export const useScenarioStore = create<ScenarioState>((set, get) => ({
       }
 
       // The agents start thinking straight away; the fault stays on screen for a moment.
-      const [decision] = await Promise.all([runCommanderStep(), sleep(FAULT_HOLD_MS)]);
+      const [decision] = await Promise.all([runOrchestratorStep(), sleep(FAULT_HOLD_MS)]);
       if (token !== runToken) return;
       const run = decision.outcome?.run ?? 1;
       set({ stage: "agents", liveDecision: decision, revealed: 0 });

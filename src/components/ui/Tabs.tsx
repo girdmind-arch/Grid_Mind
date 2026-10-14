@@ -21,7 +21,7 @@ export function TabsTrigger({ className, ...props }: ComponentPropsWithoutRef<ty
       className={cn(
         "inline-flex h-9 items-center gap-2 rounded-sm px-3 text-sm font-semibold whitespace-nowrap text-fg-muted pointer-coarse:h-11",
         "transition-colors duration-150 hover:text-fg [&_svg]:size-4",
-        "data-[state=active]:bg-surface data-[state=active]:text-fg data-[state=active]:shadow-sm",
+        "data-[state=active]:bg-surface-raised data-[state=active]:text-fg data-[state=active]:shadow-sm",
         className,
       )}
       {...props}

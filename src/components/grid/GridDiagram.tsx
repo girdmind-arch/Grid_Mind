@@ -1,4 +1,4 @@
-import { Battery, BatteryCharging, BedDouble, Landmark, Library, Microscope, SunMedium, UtilityPole } from "lucide-react";
+import { Battery, BatteryCharging, BedDouble, Cpu, House, Landmark, Library, Presentation, SunMedium, UtilityPole } from "lucide-react";
 import type { GridState, Zone, ZoneKind } from "@/types/grid";
 import { useElementWidth } from "@/hooks/useElementWidth";
 import { formatKw, formatNumber } from "@/utils/format";
@@ -12,19 +12,22 @@ import { PowerFlowLine, type FlowTone } from "./PowerFlowLine";
 //          │            │           │
 //      ────┴────────────┼───────────┴────        campus bus
 //                       │
-//      [ Hostel ] ──────┼────── [ Lab     ]      zones on both sides of a
-//      [ Hostel ] ──────┼────── [ Lab     ]      vertical feeder spine
-//      [ Hostel ] ──────┼────── [ Library ]
-//      [ Hostel ] ──────┴────── [ Admin   ]
+//      [ BH1     ] ─────┼───── [ Electrical Lab ]   zones on both sides of a
+//      [ BH2     ] ─────┼───── [ CS Lab         ]   vertical feeder spine:
+//      [ GH1     ] ─────┼───── [ Library        ]   left = where people live,
+//      [ GH2     ] ─────┼───── [ Lecture Thtrs  ]   right = academic + admin
+//      [ Faculty ] ─────┴───── [ Admin          ]
 //
 // Lines are SVG, boxes are HTML (real text sizes, accessible), both positioned
 // from the measured container width.
 
 const ZONE_ICONS: Record<ZoneKind, typeof BedDouble> = {
   hostel: BedDouble,
-  lab: Microscope,
+  lab: Cpu,
   library: Library,
   admin: Landmark,
+  academic: Presentation,
+  residence: House,
 };
 
 /** Routine evening pre-cooling is a saving, not a problem: say so instead of "Reduced". */
@@ -44,6 +47,10 @@ interface Layout {
   zone: { x: number; y: number; w: number; h: number; left: boolean }[];
 }
 
+/** Two columns of five buildings. */
+const ROWS = 5;
+const ZONE_SLOTS = ROWS * 2;
+
 function computeLayout(W: number): Layout {
   const narrow = W < 560;
   const gap = narrow ? 8 : 16;
@@ -59,12 +66,12 @@ function computeLayout(W: number): Layout {
   const rowGap = narrow ? 10 : 12;
   const firstRowY = busY + (narrow ? 28 : 32);
 
-  const zone = Array.from({ length: 8 }, (_, i) => {
-    const left = i < 4;
-    const row = i % 4;
+  const zone = Array.from({ length: ZONE_SLOTS }, (_, i) => {
+    const left = i < ROWS;
+    const row = i % ROWS;
     return { x: left ? 0 : W - colW, y: firstRowY + row * (zoneH + rowGap), w: colW, h: zoneH, left };
   });
-  const H = firstRowY + 4 * zoneH + 3 * rowGap + 2;
+  const H = firstRowY + ROWS * zoneH + (ROWS - 1) * rowGap + 2;
   return { W, H, narrow, src, busY, spineX, zone };
 }
 
@@ -77,11 +84,9 @@ export function GridDiagram({ state, className }: { state: GridState; className?
   const chargingKw = Math.max(0, state.battery.powerKw); // charging from the bus
   const maxKw = Math.max(400, state.demandKw / 2);
 
-  // Left column: the 4 hostels; right column: labs, library, admin.
-  const ordered = [
-    ...state.zones.filter((z) => z.kind === "hostel"),
-    ...state.zones.filter((z) => z.kind !== "hostel"),
-  ].slice(0, 8);
+  // Left column: hostels and the faculty compound; right: labs, library, lecture theatres, admin.
+  const residential = (z: Zone) => z.kind === "hostel" || z.kind === "residence";
+  const ordered = [...state.zones.filter(residential), ...state.zones.filter((z) => !residential(z))].slice(0, ZONE_SLOTS);
 
   const sources: { key: string; name: string; value: string; sub: string; kw: number; tone: FlowTone; icon: React.ReactNode; iconTone: "solar" | "success" | "accent"; state: NodeState }[] = [
     {
@@ -128,13 +133,13 @@ export function GridDiagram({ state, className }: { state: GridState; className?
   return (
     <figure className={cn("m-0", className)}>
       <figcaption className="sr-only">Live grid diagram. {summary}</figcaption>
-      <div ref={ref} aria-hidden className="relative w-full" style={{ height: L?.H ?? 420 }}>
+      <div ref={ref} aria-hidden className="relative w-full" style={{ height: L?.H ?? 500 }}>
         {L && (
           <>
             <svg width={L.W} height={L.H} className="absolute inset-0 overflow-visible" role="presentation">
               {/* campus bus + feeder spine */}
               <path
-                d={`M ${L.src[0].x + L.src[0].w / 2} ${L.busY} L ${L.src[2].x + L.src[2].w / 2} ${L.busY} M ${L.spineX} ${L.busY} L ${L.spineX} ${L.zone[3].y + L.zone[3].h / 2}`}
+                d={`M ${L.src[0].x + L.src[0].w / 2} ${L.busY} L ${L.src[2].x + L.src[2].w / 2} ${L.busY} M ${L.spineX} ${L.busY} L ${L.spineX} ${L.zone[ROWS - 1].y + L.zone[ROWS - 1].h / 2}`}
                 stroke="var(--border-strong)"
                 strokeWidth={6}
                 strokeLinecap="round"

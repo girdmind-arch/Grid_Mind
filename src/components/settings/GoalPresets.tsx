@@ -13,7 +13,7 @@ const PRESETS = [
   { id: "storm", title: "Storm ready", goal: "Prepare for a storm: keep reserve power for outages.", detail: "Holds the battery near full in case the main grid drops.", icon: CloudLightning },
 ];
 
-/** One-tap goals for the Commander. Sends the goal, then shows how it was understood. */
+/** One-tap goals for the Orchestrator. Sends the goal, then shows how it was understood. */
 export function GoalPresets() {
   const goal = useAppStore((s) => s.goal);
   const interpretation = useAppStore((s) => s.goalInterpretation);
@@ -27,7 +27,7 @@ export function GoalPresets() {
     try {
       const ack = await setGoalService(text);
       saveGoal(ack.goal, ack.interpretation);
-      toast({ title: "Goal updated", description: "The Commander will plan around it from the next cycle.", tone: "ai" });
+      toast({ title: "Goal updated", description: "The Orchestrator will plan around it from the next cycle.", tone: "ai" });
     } catch {
       toast({ title: "The goal could not be sent.", description: "Safe rule-based control is active. Try again.", tone: "warning" });
     } finally {
@@ -101,7 +101,7 @@ export function GoalPresets() {
         </p>
         {interpretation && (
           <p className="mt-1 text-fg-muted">
-            <span className="font-semibold text-ai">Commander: </span>
+            <span className="font-semibold text-ai">Orchestrator: </span>
             {interpretation}
           </p>
         )}

@@ -9,7 +9,7 @@ import { useScenarioStore, type ScenarioPhase } from "@/store/scenarioStore";
 function liveStatus(id: AgentId, phase: ScenarioPhase, type: FaultType | undefined): AgentStatus {
   if (phase === "awaiting-approval") return id === "guardrail" ? "waiting" : "idle";
   if (phase !== "responding") return "idle";
-  if (id === "commander" || id === "guardrail") return "thinking";
+  if (id === "orchestrator" || id === "guardrail") return "thinking";
   if (id === "planner") return "acting";
   if (id === "fault" && (type === "line_failure" || type === "grid_outage")) return "acting";
   if (id === "forecaster" && (type === "cloud_cover" || type === "heatwave")) return "acting";

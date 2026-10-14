@@ -27,7 +27,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         <Dropdown.Content
           align="end"
           sideOffset={8}
-          className="z-50 min-w-44 rounded-md border border-border bg-surface-raised p-1 shadow-lg data-[state=open]:animate-fade-in"
+          className="z-50 min-w-44 glass-strong rounded-md border border-glass-border bg-surface-solid/92 p-1 shadow-lg data-[state=open]:animate-fade-in"
         >
           <Dropdown.Label className="px-2.5 pt-1.5 pb-1 micro-label text-fg-subtle">Theme</Dropdown.Label>
           <Dropdown.RadioGroup value={preference} onValueChange={(v) => setPreference(v as ThemePreference)}>

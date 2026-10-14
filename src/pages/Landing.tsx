@@ -6,7 +6,7 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 /** The public website at "/": what GridMind is, in the order a judge reads it. */
 export default function Landing() {
   return (
-    <div className="flex min-h-dvh flex-col bg-bg">
+    <div className="relative flex min-h-dvh flex-col">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:rounded-md focus:bg-surface-raised focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-fg focus:shadow-lg"

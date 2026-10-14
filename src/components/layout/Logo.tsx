@@ -20,7 +20,8 @@ export function Logo({ to = "/", className, compact }: { to?: string; className?
           </linearGradient>
         </defs>
         <rect width="32" height="32" rx="9" fill={`url(#${gradientId})`} />
-        <path d="M17.5 6 10 18h5.5L14 26l8-12h-5.5L17.5 6Z" fill="white" />
+        <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" fill="none" stroke="white" strokeOpacity="0.14" />
+        <path d="M17.5 6 10 18h5.5L14 26l8-12h-5.5L17.5 6Z" fill="#f4c27c" />
       </svg>
       {!compact && <span className="text-[17px] font-bold tracking-tight">GridMind</span>}
     </Link>

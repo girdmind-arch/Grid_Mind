@@ -5,7 +5,7 @@ export type ResolvedTheme = "light" | "dark";
 
 // Keep in sync with the no-flash script in index.html.
 const STORAGE_KEY = "gridmind-theme";
-const THEME_COLORS: Record<ResolvedTheme, string> = { light: "#f4f7fb", dark: "#060c18" };
+const THEME_COLORS: Record<ResolvedTheme, string> = { light: "#e9e6df", dark: "#0a0d0c" };
 const darkQuery = () => window.matchMedia("(prefers-color-scheme: dark)");
 
 function readPreference(): ThemePreference {
@@ -41,7 +41,9 @@ function applyTheme(theme: ResolvedTheme, animate: boolean) {
   }
   root.dataset.theme = theme;
   root.style.colorScheme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
+  // The colour theme (data-palette) can tint the background, so read the live token.
+  const bg = getComputedStyle(root).getPropertyValue("--theme-color").trim() || THEME_COLORS[theme];
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
 }
 
 interface ThemeContextValue {

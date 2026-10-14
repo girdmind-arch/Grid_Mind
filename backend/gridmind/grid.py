@@ -52,7 +52,7 @@ def apply_fault(base: Conditions, fault: Fault | None) -> Conditions:
     if fault.type == "heatwave":
         return replace(base, heat_severity=fault.severity)
     if fault.type == "line_failure":
-        return replace(base, line_fault_zone=fault.target_zone_id or "hostel-narmada")
+        return replace(base, line_fault_zone=fault.target_zone_id or "hostel-gh1")
     if fault.type == "grid_outage":
         return replace(base, outage=True)
     return base
@@ -201,7 +201,7 @@ class LiveGrid:
             self._advance()
             self.incident_counter += 1
             if type_ == "line_failure":
-                target_zone_id = target_zone_id or "hostel-narmada"
+                target_zone_id = target_zone_id or "hostel-gh1"
             self.fault = Fault(type_, max(1, min(5, severity)), duration_min, f"INC-{self.incident_counter}", self._hour, target_zone_id)
             self.mode = "ai"
             # The fault hits before anyone reacts: drop any earlier scenario response.

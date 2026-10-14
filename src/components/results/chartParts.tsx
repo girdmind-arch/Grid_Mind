@@ -49,7 +49,7 @@ export function makeTooltip(format: (n: number) => string, labelPrefix = "") {
     const base = value("baseline");
     const less = base > 0 ? Math.round((1 - gm / base) * 100) : 0;
     return (
-      <div className="min-w-44 rounded-md border border-border bg-surface-raised px-3 py-2.5 text-sm shadow-md">
+      <div className="min-w-44 glass-strong rounded-md border border-glass-border bg-surface-solid/92 px-3 py-2.5 text-sm shadow-md">
         <p className="mb-1.5 font-semibold text-fg">
           {labelPrefix}
           {label}

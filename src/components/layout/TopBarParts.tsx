@@ -162,7 +162,7 @@ export function Notifications() {
           align="end"
           sideOffset={8}
           collisionPadding={16}
-          className="z-50 w-[min(340px,calc(100vw-32px))] rounded-lg border border-border bg-surface-raised p-1.5 shadow-lg data-[state=open]:animate-fade-in"
+          className="z-50 w-[min(340px,calc(100vw-32px))] glass-strong rounded-lg border border-glass-border bg-surface-solid/92 p-1.5 shadow-lg data-[state=open]:animate-fade-in"
         >
           <Dropdown.Label className="micro-label px-2.5 pt-2 pb-1.5 text-fg-subtle">Notifications</Dropdown.Label>
           {NOTIFICATIONS.map((n) => (

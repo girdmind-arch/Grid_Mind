@@ -38,10 +38,10 @@ export const SCENARIOS: Record<
   },
   line_failure: {
     title: "Line Failure",
-    blurb: "The feeder cable to Narmada Hostel trips.",
+    blurb: "The feeder cable to GH1 trips.",
     icon: Zap,
     tone: "danger",
-    activeLabel: "Line failure near Narmada Hostel",
+    activeLabel: "Line failure near GH1",
     response: "Isolate the faulty feeder and reroute the hostel through feeder F2.",
     severity: ["Brief flicker", "Short trip", "Feeder trip", "Cable damage", "Cable and joint damage"],
   },

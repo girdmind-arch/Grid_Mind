@@ -5,8 +5,8 @@ import type { Agent, GuardrailRule } from "@/types/agents";
 
 export const AGENTS: Agent[] = [
   {
-    id: "commander",
-    name: "Commander",
+    id: "orchestrator",
+    name: "Orchestrator",
     role: "Runs the decision loop and explains every choice in plain language.",
     status: "idle",
     lastAction: "Chose Plan B for the evening peak.",

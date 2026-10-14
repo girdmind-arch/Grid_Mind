@@ -12,7 +12,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { to: "/app", label: "Control Room", icon: Gauge, keywords: "home dashboard grid live demand solar battery" },
-  { to: "/app/agents", label: "Agents", icon: Bot, keywords: "commander forecaster planner critic guardrail trace thinking" },
+  { to: "/app/agents", label: "Agents", icon: Bot, keywords: "orchestrator forecaster planner critic guardrail trace thinking" },
   { to: "/app/scenarios", label: "Scenarios", icon: Zap, keywords: "fault cloud heatwave line failure outage break" },
   { to: "/app/memory", label: "Memory", icon: History, keywords: "incidents lessons learned history" },
   { to: "/app/results", label: "Results", icon: ChartColumn, keywords: "baseline savings cost peak recovery judges" },

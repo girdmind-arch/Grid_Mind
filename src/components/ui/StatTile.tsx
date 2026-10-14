@@ -31,7 +31,7 @@ export function StatTile({ label, value, unit, prefix, digits = 0, icon, tone = 
   const TrendIcon = trend ? trendIcon[trend] : null;
 
   return (
-    <div className={cn("flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-3 glass rounded-lg border border-glass-border bg-surface p-4 shadow-md", className)}>
       <div className="flex items-center gap-2.5">
         {icon && <IconTile icon={icon} tone={tone} size="sm" />}
         <span className="micro-label truncate text-fg-muted">{label}</span>

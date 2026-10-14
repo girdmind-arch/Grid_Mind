@@ -11,7 +11,7 @@ import { simNow } from "@/utils/simTime";
 import { BATTERY_CAPACITY_KWH, ZONES, tariffAt } from "./campus";
 
 const NORMAL_SOLAR_KW = 310;
-const DEFAULT_LINE_FAULT_ZONE = "hostel-narmada";
+const DEFAULT_LINE_FAULT_ZONE = "hostel-gh1";
 
 let activeFault: ActiveFault | null = null;
 let mode: ControlMode = "ai";

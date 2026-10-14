@@ -4,6 +4,7 @@ import { ControlModeHero } from "@/components/settings/ControlModeHero";
 import { GoalPresets } from "@/components/settings/GoalPresets";
 import { SimulationClock } from "@/components/settings/SimulationClock";
 import { CampusLocationPicker } from "@/components/settings/CampusLocationPicker";
+import { ColourThemePicker } from "@/components/settings/ColourThemePicker";
 import { GuardrailRules } from "@/components/agents/GuardrailRules";
 
 const TABS = [
@@ -11,7 +12,7 @@ const TABS = [
     value: "goal",
     label: "Goal",
     icon: Target,
-    description: "What the Commander should aim for.",
+    description: "What the Orchestrator should aim for.",
     content: <GoalPresets />,
   },
   {
@@ -32,8 +33,19 @@ const TABS = [
     value: "appearance",
     label: "Appearance",
     icon: Palette,
-    description: "System follows your device and switches with it.",
-    content: <ThemeSwitcher className="w-full max-w-md" />,
+    description: "Pick light or dark (System follows your device), then a colour theme. Both change the whole app and are remembered on this device.",
+    content: (
+      <div className="space-y-6">
+        <section aria-labelledby="mode-label">
+          <h3 id="mode-label" className="micro-label mb-2.5 text-fg-subtle">Mode</h3>
+          <ThemeSwitcher className="w-full max-w-md" />
+        </section>
+        <section aria-labelledby="colour-label">
+          <h3 id="colour-label" className="micro-label mb-2.5 text-fg-subtle">Colour theme</h3>
+          <ColourThemePicker />
+        </section>
+      </div>
+    ),
   },
   {
     value: "guardrails",
@@ -63,7 +75,7 @@ export default function Settings() {
           })}
         </TabsList>
         {TABS.map((t) => (
-          <TabsContent key={t.value} value={t.value} className="max-w-4xl rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6">
+          <TabsContent key={t.value} value={t.value} className="glass max-w-4xl rounded-lg border border-glass-border bg-surface p-5 shadow-md sm:p-6">
             <p className="mb-5 text-sm text-fg-muted">{t.description}</p>
             {t.content}
           </TabsContent>

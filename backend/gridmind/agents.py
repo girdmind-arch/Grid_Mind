@@ -1,9 +1,9 @@
 """The agent loop: observe -> reason -> plan (twin) -> safety -> act -> result.
 
-Nothing here is pre-written per scenario output. The Commander builds two
+Nothing here is pre-written per scenario output. The Orchestrator builds two
 candidate plans for the current situation, the Planner runs both in the digital
 twin, the Guardrail checks the twin results against the hard rules, and the
-Commander picks the plan with the best score for the operator's goal.
+Orchestrator picks the plan with the best score for the operator's goal.
 Explanations are plain-language templates filled with the computed numbers
 (optionally rewritten by Claude, see explain.py).
 """
@@ -39,7 +39,7 @@ def period_of(hour: float) -> str:
 VOLL_INR_PER_KWH = 120.0
 
 AGENT_NAMES = {
-    "commander": "Commander",
+    "orchestrator": "Orchestrator",
     "forecaster": "Forecaster",
     "zone": "Zone Agents",
     "planner": "Planner / Simulator",
@@ -249,8 +249,8 @@ def score(cand: Candidate, goal: Goal) -> float:
     return cand.cost + (100 - cand.comfort) * goal.comfort_weight + cand.tot.dark_kwh * VOLL_INR_PER_KWH + penalty
 
 
-# ---------- The Commander ----------
-class Commander:
+# ---------- The Orchestrator ----------
+class Orchestrator:
     def __init__(self, grid: LiveGrid, memory: Memory):
         self.grid = grid
         self.memory = memory
@@ -421,13 +421,13 @@ class Commander:
             "steps": [
                 {"id": "s1", "kind": "observe", "agent": "forecaster", "at": when, "summary": self._observe_weather(),
                  "detail": f"Next evening peak: {fmt_kw(peak_kw)} around {peak_at}."},
-                {"id": "s2", "kind": "reason", "agent": "commander", "at": when, "summary": reason_line},
+                {"id": "s2", "kind": "reason", "agent": "orchestrator", "at": when, "summary": reason_line},
                 {"id": "s3", "kind": "plan", "agent": "planner", "at": when,
                  "summary": f"Tested 2 plans in the digital twin up to {horizon} with the live forecast.",
                  "detail": f"Plan A: {fmt_inr(a.cost)}, {a.comfort}% comfort. Plan B: {fmt_inr(b.cost)}, {b.comfort}% comfort. "
                            f"Evening import cap sized at {fmt_kw(target)} (18 twin runs)."},
                 {"id": "s4", "kind": "safety", "agent": "guardrail", "at": when, "summary": self._safety_summary(chosen, other)},
-                {"id": "s5", "kind": "act", "agent": "commander", "at": when, "summary": f"Plan {chosen.id} active. {chosen.actions[0]}."},
+                {"id": "s5", "kind": "act", "agent": "orchestrator", "at": when, "summary": f"Plan {chosen.id} active. {chosen.actions[0]}."},
                 {"id": "s6", "kind": "result", "agent": "critic", "at": when,
                  "summary": f"Projected {fmt_inr(saving)} better than Plan {other.id} by {horizon}." if saving > 0 else "Both plans come out about the same."},
             ],
@@ -473,7 +473,7 @@ class Commander:
                 f"Hostel demand up {hostel_up}% as ACs ramp up. Campus load now {fmt_kw(snap.demand_kw)}."
 
         if fault.type == "line_failure":
-            zone_id = fault.target_zone_id or "hostel-narmada"
+            zone_id = fault.target_zone_id or "hostel-gh1"
             zone = c.ZONE_BY_ID[zone_id]
             # Size the reroute for the worst moment of the fault, not just now:
             # F2's own load and the hostel's demand both rise into the evening peak.
@@ -509,7 +509,7 @@ class Commander:
         off_runtime = self._runtime_hours(replace(base, outage_hostel_level=0.0))
         self._outage_runtimes = options
         cands = [
-            Candidate("A", "Keep hostels off", "Power only labs, library and admin until the grid returns.",
+            Candidate("A", "Keep hostels off", "Power everything except the hostels until the grid returns.",
                       ["Hostels off", f"Battery lasts ~{fmt_hours(off_runtime)}"], replace(base, outage_hostel_level=0.0)),
             Candidate("B", "Hostels at 60%", "Restore hostels at 60%: lights, fans and sockets, no AC.",
                       ["Hostels at 60%", f"Battery lasts ~{fmt_hours(options[0.6])}"], replace(base, outage_hostel_level=0.6)),
@@ -553,12 +553,12 @@ class Commander:
         replay = run > 1 and previous is not None
         when = iso(g.now())
         agent_observe = {"cloud_cover": "forecaster", "heatwave": "zone", "line_failure": "fault", "grid_outage": "fault"}[fault.type]
-        agent_act = "fault" if fault.type == "line_failure" else "commander"
+        agent_act = "fault" if fault.type == "line_failure" else "orchestrator"
 
         steps = [
             {"id": "s1", "kind": "observe", "agent": agent_observe, "at": when, "summary": observed,
              "detail": f"Detected in {parts[0]:.1f} min of simulated time."},
-            {"id": "s2", "kind": "reason", "agent": "commander", "at": when, "summary": self._reason(chosen, other),
+            {"id": "s2", "kind": "reason", "agent": "orchestrator", "at": when, "summary": self._reason(chosen, other),
              "detail": f"Lesson applied from {previous}: {lesson}" if replay else None},
             {"id": "s3", "kind": "plan", "agent": "planner", "at": when,
              "summary": f"Tested 2 plans in the digital twin up to 22:00 ({parts[1]:.1f} min).",
@@ -610,14 +610,14 @@ class Commander:
 
     def _final_steps(self, fault: Fault, chosen: Candidate, when: str) -> list[dict]:
         snap = self.grid.snapshot()
-        agent_act = "fault" if fault.type == "line_failure" else "commander"
+        agent_act = "fault" if fault.type == "line_failure" else "orchestrator"
         act = f"Plan {chosen.id} applied: " + "; ".join(chosen.actions[:2]) + "."
         if fault.type == "cloud_cover":
             result = f"Grid draw held at {fmt_kw(snap.grid_kw)}. No zone noticed the dip."
         elif fault.type == "heatwave":
             result = f"Grid import now {fmt_kw(snap.grid_kw)}, peak kept under the contract limit. Comfort at {chosen.comfort}%."
         elif fault.type == "line_failure":
-            z = next(z for z in snap.zones if z.id == (fault.target_zone_id or "hostel-narmada"))
+            z = next(z for z in snap.zones if z.id == (fault.target_zone_id or "hostel-gh1"))
             result = f"{c.ZONE_BY_ID[z.id].name} back on at {fmt_kw(z.kw)}. Maintenance ticket raised for F3."
         else:
             result = f"All zones powered from the battery ({round(self.grid.battery.soc_pct)}%)."
@@ -681,7 +681,7 @@ class Commander:
                 note = "Approved by Duty Operator." if kind == "approve" else f"Modified by Duty Operator: hostels at {pct}%."
                 status = "approved" if kind == "approve" else "modified"
                 final = [
-                    {"id": "s5", "kind": "act", "agent": "commander", "at": when, "summary": f"Hostels restored at {pct}%; battery powering the campus."},
+                    {"id": "s5", "kind": "act", "agent": "orchestrator", "at": when, "summary": f"Hostels restored at {pct}%; battery powering the campus."},
                     {"id": "s6", "kind": "result", "agent": "critic", "at": when, "summary": f"All zones powered. Battery lasts ~{fmt_hours(runtime)} at this load."},
                 ]
             d["steps"] = d["steps"] + final
@@ -723,7 +723,7 @@ class Commander:
 
     def agents(self) -> list[dict]:
         roles = {
-            "commander": ("Runs the decision loop and explains every choice in plain language.",
+            "orchestrator": ("Runs the decision loop and explains every choice in plain language.",
                           ["read_grid_state", "ask_forecaster", "request_plans", "submit_to_guardrail", "dispatch_action", "explain"]),
             "forecaster": ("Predicts campus demand and solar output for the next 12 hours.", ["demand_forecast", "solar_forecast", "weather_feed"]),
             "zone": ("One per building. Report load and how much can be safely reduced.", ["read_zone_meter", "set_hvac_setpoint", "report_flexibility"]),
@@ -740,7 +740,7 @@ class Commander:
         waiting = bool(self.pending)
         out = []
         for aid, (role, tools) in roles.items():
-            status = "waiting" if waiting and aid in ("commander", "guardrail") else "idle"
+            status = "waiting" if waiting and aid in ("orchestrator", "guardrail") else "idle"
             out.append({"id": aid, "name": AGENT_NAMES[aid], "role": role, "status": status,
                         "lastAction": last.get(aid, defaults.get(aid, "Standing by.")), "tools": tools})
         return out

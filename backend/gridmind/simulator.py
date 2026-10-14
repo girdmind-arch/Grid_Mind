@@ -128,7 +128,7 @@ NIGHT_IMPORT_CAP_KW = 1100.0
 # Hours in which the battery caps grid import (the evening ramp plus the 18:00-22:00 tariff peak).
 PEAK_WINDOW = (17.0, 22.0)
 
-HVAC_KINDS = {"hostel", "library", "admin"}
+HVAC_KINDS = {"hostel", "library", "admin", "academic", "residence"}
 
 # What buildings would draw with nobody curtailing them (for the comfort score).
 REQUEST_POLICY = Policy(ai=True, night_charge_to_pct=None, reroute_fraction=1.0, outage_hostel_level=1.0)
@@ -152,7 +152,7 @@ def zone_loads(hour: float, cond: Conditions, pol: Policy) -> list[ZoneLoad]:
             kw *= 1 + (0.04 if z.kind in HVAC_KINDS else 0.01) * cond.heat_severity
 
         if pol.ai:
-            if pol.hvac_trim and z.kind in {"library", "admin"} and 9 <= h < 18:
+            if pol.hvac_trim and z.kind in {"library", "admin", "academic"} and 9 <= h < 18:
                 kw *= 0.95
             if pol.precool and z.kind == "hostel":
                 if 17.5 <= h < 18:

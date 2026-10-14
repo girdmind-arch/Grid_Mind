@@ -7,7 +7,7 @@ import type { FaultType } from "@/types/grid";
 const TYPE_WORDS: Record<FaultType, RegExp> = {
   cloud_cover: /\b(cloud|clouds|cloudy|overcast|monsoon|rain|storm|shade|shadow|dust|smog|fog|solar (?:drop|dip|loss|down))/i,
   heatwave: /\b(heat|hot|heatwave|temperature|°c|degrees|cooling|a\.?c\.?s?|air ?con|summer|loo)\b/i,
-  line_failure: /\b(cable|line|feeder|wire|trip|tripped|short|spark|transformer|breaker|narmada|fault)\b/i,
+  line_failure: /\b(cable|line|feeder|wire|trip|tripped|short|spark|transformer|breaker|gh1|fault)\b/i,
   grid_outage: /\b(outage|blackout|power cut|grid (?:down|lost|loss|fail\w*|off)|no power|load ?shedding|uppcl|discom|supply (?:lost|cut))/i,
 };
 
@@ -63,6 +63,6 @@ export function parseScenario(text: string): ParsedScenario | null {
 export const EXAMPLES = [
   "Severe heatwave during exam night",
   "Monsoon clouds kill solar for an hour",
-  "Feeder cable to Narmada trips",
+  "Feeder cable to GH1 trips",
   "UPPCL blackout, 60 minutes",
 ];

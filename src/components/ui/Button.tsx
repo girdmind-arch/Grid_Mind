@@ -16,13 +16,13 @@ const buttonVariants = cva(
         /** The one main action on a screen. */
         primary: "bg-accent text-on-accent shadow-sm hover:bg-accent-hover",
         /** Secondary actions. */
-        secondary: "border border-border-strong bg-surface text-fg shadow-sm hover:bg-surface-sunken",
+        secondary: "glass border border-glass-border bg-surface-raised text-fg shadow-sm hover:bg-surface",
         /** Low-emphasis actions, icon buttons in bars. */
         ghost: "text-fg-muted hover:bg-surface-sunken hover:text-fg",
         /** Destructive or fault-related actions. */
         danger: "bg-danger text-on-accent shadow-sm hover:opacity-90",
         /** Primary action placed on the gradient hero. */
-        onHero: "bg-white text-[var(--hero-from)] shadow-sm hover:bg-white/90",
+        onHero: "bg-[#f6efe4] text-[var(--hero-from)] shadow-sm hover:bg-white",
         /** Secondary action placed on the gradient hero. */
         onHeroGhost: "border border-white/40 text-hero-text hover:bg-white/10",
       },

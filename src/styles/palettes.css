@@ -1,0 +1,168 @@
+/*
+ * Colour themes (Settings → Appearance), in the spirit of Rent Ledger's.
+ * "pine" is the default and lives in tokens.css; each theme here swaps the
+ * accent, the hero glass, the sky tint and the backdrop's agent pulses, for
+ * light and dark separately. Semantic colours (success, warning, danger, AI,
+ * solar) never change, so status always reads the same.
+ * Generated values are checked for WCAG AA against the glass surfaces.
+ */
+:root[data-palette="indigo"]:not([data-theme="dark"]) {
+  --accent: #4a4ead;
+  --accent-hover: #3d4195;
+  --on-accent: #ffffff;
+  --focus-ring: #4a4ead;
+  --chart-1: #4a4ead;
+  --hero-from: #22244c;
+  --hero-to: #3a3e84;
+  --hero-glow: rgba(184, 176, 255, 0.22);
+  --bg: #e7e5ee;
+  --sky-top: #dfdeec;
+  --bg-glow-2: rgba(108, 104, 214, 0.18);
+  --bg-pulse-2: 74, 78, 173;
+  --bg-line: 58, 60, 96;
+  --theme-color: #e7e5ee;
+}
+:root[data-palette="indigo"][data-theme="dark"] {
+  --accent: #a7aaf6;
+  --accent-hover: #c0c2fa;
+  --on-accent: #14163a;
+  --focus-ring: #a7aaf6;
+  --chart-1: #a7aaf6;
+  --hero-from: #191a38;
+  --hero-to: #2e3170;
+  --hero-glow: rgba(160, 150, 255, 0.16);
+  --bg: #0b0b11;
+  --sky-top: #0c0b15;
+  --bg-glow-2: rgba(120, 110, 230, 0.15);
+  --bg-pulse-2: 167, 170, 246;
+  --bg-line: 170, 172, 230;
+  --theme-color: #0b0b11;
+}
+:root[data-palette="ocean"]:not([data-theme="dark"]) {
+  --accent: #0d5e8c;
+  --accent-hover: #0a4f76;
+  --on-accent: #ffffff;
+  --focus-ring: #0d5e8c;
+  --chart-1: #0d5e8c;
+  --hero-from: #0f2a40;
+  --hero-to: #1b5175;
+  --hero-glow: rgba(140, 204, 244, 0.22);
+  --bg: #e3e7eb;
+  --sky-top: #dbe4ec;
+  --bg-glow-2: rgba(30, 110, 170, 0.16);
+  --bg-pulse-2: 13, 94, 140;
+  --bg-line: 40, 62, 84;
+  --theme-color: #e3e7eb;
+}
+:root[data-palette="ocean"][data-theme="dark"] {
+  --accent: #6cc0ee;
+  --accent-hover: #91d0f3;
+  --on-accent: #04202f;
+  --focus-ring: #6cc0ee;
+  --chart-1: #6cc0ee;
+  --hero-from: #0c2032;
+  --hero-to: #173f5c;
+  --hero-glow: rgba(110, 190, 240, 0.15);
+  --bg: #090c10;
+  --sky-top: #090d13;
+  --bg-glow-2: rgba(50, 140, 210, 0.14);
+  --bg-pulse-2: 108, 192, 238;
+  --bg-line: 150, 190, 220;
+  --theme-color: #090c10;
+}
+:root[data-palette="forest"]:not([data-theme="dark"]) {
+  --accent: #2d6a2e;
+  --accent-hover: #255925;
+  --on-accent: #ffffff;
+  --focus-ring: #2d6a2e;
+  --chart-1: #2d6a2e;
+  --hero-from: #13281a;
+  --hero-to: #244e2d;
+  --hero-glow: rgba(176, 226, 160, 0.2);
+  --bg: #e5e7df;
+  --sky-top: #dee4da;
+  --bg-glow-2: rgba(60, 130, 60, 0.16);
+  --bg-pulse-2: 45, 106, 46;
+  --bg-line: 48, 70, 50;
+  --theme-color: #e5e7df;
+}
+:root[data-palette="forest"][data-theme="dark"] {
+  --accent: #8fd18a;
+  --accent-hover: #abdea7;
+  --on-accent: #0c220b;
+  --focus-ring: #8fd18a;
+  --chart-1: #8fd18a;
+  --hero-from: #0f2014;
+  --hero-to: #1f4427;
+  --hero-glow: rgba(150, 220, 140, 0.13);
+  --bg: #0a0d09;
+  --sky-top: #0a0e0a;
+  --bg-glow-2: rgba(80, 170, 80, 0.13);
+  --bg-pulse-2: 143, 209, 138;
+  --bg-line: 160, 200, 160;
+  --theme-color: #0a0d09;
+}
+:root[data-palette="plum"]:not([data-theme="dark"]) {
+  --accent: #873264;
+  --accent-hover: #722a55;
+  --on-accent: #ffffff;
+  --focus-ring: #873264;
+  --chart-1: #873264;
+  --hero-from: #2c1424;
+  --hero-to: #56284a;
+  --hero-glow: rgba(244, 170, 210, 0.2);
+  --bg: #ece5e8;
+  --sky-top: #e8dee4;
+  --bg-glow-2: rgba(160, 60, 120, 0.15);
+  --bg-pulse-2: 135, 50, 100;
+  --bg-line: 80, 50, 70;
+  --theme-color: #ece5e8;
+}
+:root[data-palette="plum"][data-theme="dark"] {
+  --accent: #eea2cb;
+  --accent-hover: #f4bcdb;
+  --on-accent: #2d0c1e;
+  --focus-ring: #eea2cb;
+  --chart-1: #eea2cb;
+  --hero-from: #221019;
+  --hero-to: #4a2140;
+  --hero-glow: rgba(240, 150, 200, 0.14);
+  --bg: #0f0a0d;
+  --sky-top: #110a0f;
+  --bg-glow-2: rgba(190, 80, 150, 0.13);
+  --bg-pulse-2: 238, 162, 203;
+  --bg-line: 220, 170, 200;
+  --theme-color: #0f0a0d;
+}
+:root[data-palette="graphite"]:not([data-theme="dark"]) {
+  --accent: #3c495b;
+  --accent-hover: #313c4b;
+  --on-accent: #ffffff;
+  --focus-ring: #3c495b;
+  --chart-1: #3c495b;
+  --hero-from: #1b2027;
+  --hero-to: #3a434f;
+  --hero-glow: rgba(210, 220, 235, 0.2);
+  --bg: #e6e6e5;
+  --sky-top: #e0e2e4;
+  --bg-glow-2: rgba(90, 100, 120, 0.14);
+  --bg-pulse-2: 60, 73, 91;
+  --bg-line: 56, 62, 72;
+  --theme-color: #e6e6e5;
+}
+:root[data-palette="graphite"][data-theme="dark"] {
+  --accent: #b9c5d5;
+  --accent-hover: #d0d9e4;
+  --on-accent: #141a22;
+  --focus-ring: #b9c5d5;
+  --chart-1: #b9c5d5;
+  --hero-from: #15181d;
+  --hero-to: #2f3640;
+  --hero-glow: rgba(200, 210, 230, 0.1);
+  --bg: #0b0c0d;
+  --sky-top: #0b0c0e;
+  --bg-glow-2: rgba(130, 145, 170, 0.12);
+  --bg-pulse-2: 185, 197, 213;
+  --bg-line: 190, 196, 206;
+  --theme-color: #0b0c0d;
+}

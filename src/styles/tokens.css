@@ -17,8 +17,8 @@
   /* Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-pill: 999px;
 
   /* Layout spacing */
@@ -36,107 +36,151 @@
   --dur-slow: 300ms;
   --lift: -2px;
 
-  /* ---------- Light theme (default) ---------- */
+  /* ---------- Light theme (default) ----------
+     "Substation at dusk": warm stone neutrals, verdigris (oxidised copper)
+     for actions, copper/amber for generation, steel blue for agent thinking.
+     Surfaces are translucent glass over the animated grid backdrop; every
+     text colour is checked against the glass over the stone background. */
   color-scheme: light;
 
-  --bg: #f4f7fb;
-  --surface: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-sunken: #eaf0f7;
-  --border: #dfe6ef;
-  --border-strong: #c3cedc;
+  --bg: #e9e6df;
+  --bg-glow-1: rgba(214, 136, 72, 0.22);   /* copper sunlight */
+  --bg-glow-2: rgba(38, 122, 108, 0.16);   /* verdigris */
+  --bg-line: 46, 62, 56;                   /* rgb triplet for the grid lines */
+  --bg-line-alpha: 0.2;
+  --bg-pulse: 176, 92, 32;                 /* energy pulses (copper) */
+  --bg-pulse-2: 22, 110, 98;               /* agent pulses (verdigris) */
+  --grain-opacity: 0.05;
+  --sky-top: #dfe3e1;
+  --sky-horizon: #f3d6bb;                  /* dusk peach at the horizon */
+  --ground: #e4dfd5;
+  --sun: rgba(255, 236, 214, 0.95);
+  --sun-halo: rgba(246, 164, 104, 0.4);
+  --skyline: rgba(74, 86, 80, 0.2);
+  --window: rgba(214, 128, 60, 0.38);
+  --bubble: rgba(255, 255, 255, 0.5);
 
-  --text: #0b1526;
-  --text-muted: #4b5a73;    /* 7.0:1 on surface */
-  --text-subtle: #5f6d84;   /* 5.3:1 on surface, 4.9:1 on bg */
+  --surface: rgba(255, 253, 249, 0.42);
+  --surface-raised: rgba(255, 253, 250, 0.7);
+  --surface-sunken: rgba(92, 80, 60, 0.07);
+  --surface-solid: #f8f6f1;
+  --border: rgba(70, 58, 40, 0.12);
+  --border-strong: rgba(70, 58, 40, 0.22);
+  --glass-edge: rgba(255, 255, 255, 0.85); /* top highlight of glass panes */
+  --glass-border: rgba(255, 255, 255, 0.62);
+  --glass-sheen: rgba(255, 255, 255, 0.5);
+  --glass-blur: 26px;
 
-  --accent: #0b63c4;        /* interactive blue */
-  --accent-hover: #0a56aa;
+  --text: #191814;
+  --text-muted: #4d483f;    /* ~8:1 on glass */
+  --text-subtle: #655f54;   /* ~5.4:1 on glass */
+
+  --accent: #0d6b5f;        /* verdigris */
+  --accent-hover: #0a5950;
   --on-accent: #ffffff;
 
-  --success: #127a3e;       /* electric green, deepened for white */
-  --warning: #a65300;       /* solar amber, deepened for white */
-  --danger: #c0262d;
-  --ai: #4a3fd1;            /* agent thinking */
-  --solar: #975100;         /* generation (amber family) */
+  --success: #3b7414;       /* olive green, distinct from the accent */
+  --warning: #a14f00;
+  --danger: #b3261e;
+  --ai: #2d5b88;            /* steel blue: agent thinking */
+  --solar: #965400;
 
-  /* Hero gradient: blue -> teal. White text passes AA on both stops. */
-  --hero-from: #0a4fb3;
-  --hero-to: #0a7480;
+  /* Hero: deep pine glass with a copper glow. White text passes AA. */
+  --hero-from: #15302b;
+  --hero-to: #22493f;
+  --hero-glow: rgba(150, 214, 196, 0.2);
   --hero-text: #ffffff;
-  --hero-text-muted: rgba(255, 255, 255, 0.86);
+  --hero-text-muted: rgba(255, 255, 255, 0.84);
 
-  /* Shadows: light uses soft shadows instead of glows */
-  --shadow-sm: 0 1px 2px rgba(15, 30, 60, 0.05), 0 1px 3px rgba(15, 30, 60, 0.04);
-  --shadow-md: 0 2px 4px rgba(15, 30, 60, 0.04), 0 8px 24px rgba(15, 30, 60, 0.07);
-  --shadow-lg: 0 4px 8px rgba(15, 30, 60, 0.05), 0 20px 48px rgba(15, 30, 60, 0.12);
-  --shadow-hero: 0 12px 32px rgba(10, 79, 179, 0.22);
-  --glow-success: 0 0 0 3px rgba(18, 122, 62, 0.16);
-  --glow-danger: 0 0 0 3px rgba(192, 38, 45, 0.18);
-  --glow-ai: 0 0 0 3px rgba(74, 63, 209, 0.14);
+  --shadow-sm: inset 0 1px 0 var(--glass-edge), 0 1px 2px rgba(40, 30, 15, 0.05), 0 2px 8px rgba(40, 30, 15, 0.04);
+  --shadow-md: inset 0 1px 0 var(--glass-edge), 0 2px 4px rgba(40, 30, 15, 0.04), 0 12px 32px rgba(40, 30, 15, 0.08);
+  --shadow-lg: inset 0 1px 0 var(--glass-edge), 0 4px 8px rgba(40, 30, 15, 0.05), 0 24px 56px rgba(40, 30, 15, 0.14);
+  --shadow-hero: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 18px 44px rgba(21, 48, 43, 0.28);
+  --glow-success: 0 0 0 3px rgba(59, 116, 20, 0.16);
+  --glow-danger: 0 0 0 3px rgba(179, 38, 30, 0.18);
+  --glow-ai: 0 0 0 3px rgba(45, 91, 136, 0.15);
 
-  /* Charts. 1 vs 2 checked with the dataviz palette validator (contrast >= 3:1,
-     colour-blind separation). The baseline is grey on purpose: GridMind is the
-     highlighted series, the no-AI baseline is the muted comparison. */
-  --chart-1: #0b63c4; /* GridMind */
-  --chart-2: #7b889e; /* baseline */
-  --chart-3: #127a3e;
-  --chart-4: #975100;
-  --chart-5: #4a3fd1;
-  --chart-grid: #e6ecf3;
+  /* Charts: GridMind is the highlighted series, the no-AI baseline is grey. */
+  --chart-1: #0d6b5f; /* GridMind */
+  --chart-2: #8a8478; /* baseline */
+  --chart-3: #3b7414;
+  --chart-4: #965400;
+  --chart-5: #2d5b88;
+  --chart-grid: rgba(70, 58, 40, 0.1);
 
-  --focus-ring: #0b63c4;
-  --overlay: rgba(11, 21, 38, 0.42);
-  --theme-color: #f4f7fb;
+  --focus-ring: #0d6b5f;
+  --overlay: rgba(25, 24, 20, 0.36);
+  --theme-color: #e9e6df;
 }
 
 /* ---------- Dark theme ---------- */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #060c18;
-  --surface: #0c1527;
-  --surface-raised: #121d34;
-  --surface-sunken: #08101f;
-  --border: #1c2942;
-  --border-strong: #2a3b5c;
+  --bg: #0a0d0c;
+  --bg-glow-1: rgba(205, 120, 58, 0.16);
+  --bg-glow-2: rgba(46, 150, 128, 0.13);
+  --bg-line: 150, 190, 175;
+  --bg-line-alpha: 0.23;
+  --bg-pulse: 240, 160, 90;
+  --bg-pulse-2: 110, 220, 195;
+  --grain-opacity: 0.06;
+  --sky-top: #090c0d;
+  --sky-horizon: #2b1b12;                  /* last ember of dusk */
+  --ground: #0b0f0e;
+  --sun: rgba(255, 196, 140, 0.55);
+  --sun-halo: rgba(214, 112, 48, 0.32);
+  --skyline: rgba(0, 0, 0, 0.55);
+  --window: rgba(242, 170, 92, 0.42);
+  --bubble: rgba(255, 255, 255, 0.12);
 
-  --text: #e9eef8;
-  --text-muted: #a3b0c7;    /* 8.4:1 on surface */
-  --text-subtle: #8796b0;   /* 6.0:1 on surface */
+  --surface: rgba(30, 36, 34, 0.38);
+  --surface-raised: rgba(36, 43, 41, 0.66);
+  --surface-sunken: rgba(0, 0, 0, 0.22);
+  --surface-solid: #151a18;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --glass-edge: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.11);
+  --glass-sheen: rgba(255, 255, 255, 0.07);
+  --glass-blur: 28px;
 
-  --accent: #5aaeff;
-  --accent-hover: #7bbfff;
-  --on-accent: #041122;
+  --text: #edebe5;
+  --text-muted: #b5b1a7;    /* ~8:1 on glass */
+  --text-subtle: #918d84;   /* ~5.6:1 on glass */
 
-  --success: #3ad683;
-  --warning: #f3b33f;
-  --danger: #ff6b6b;
-  --ai: #a49cff;
-  --solar: #f7b648;
+  --accent: #63d0b9;
+  --accent-hover: #86dcc9;
+  --on-accent: #06211c;
 
-  --hero-from: #1747a8;
-  --hero-to: #0b6772;
+  --success: #a4d867;
+  --warning: #f0b04a;
+  --danger: #ff7a6e;
+  --ai: #8fbce9;
+  --solar: #f2b357;
+
+  --hero-from: #112520;
+  --hero-to: #1b3f37;
+  --hero-glow: rgba(120, 200, 180, 0.14);
   --hero-text: #ffffff;
-  --hero-text-muted: rgba(255, 255, 255, 0.84);
+  --hero-text-muted: rgba(255, 255, 255, 0.82);
 
-  /* Dark uses a hairline highlight + deep shadow, and soft glows */
-  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lg: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 48px rgba(0, 0, 0, 0.5);
-  --shadow-hero: 0 16px 40px rgba(23, 71, 168, 0.35);
-  --glow-success: 0 0 16px rgba(58, 214, 131, 0.35);
-  --glow-danger: 0 0 18px rgba(255, 107, 107, 0.45);
-  --glow-ai: 0 0 16px rgba(164, 156, 255, 0.3);
+  --shadow-sm: inset 0 1px 0 var(--glass-edge), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: inset 0 1px 0 var(--glass-edge), 0 10px 28px rgba(0, 0, 0, 0.35);
+  --shadow-lg: inset 0 1px 0 var(--glass-edge), 0 24px 56px rgba(0, 0, 0, 0.5);
+  --shadow-hero: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 44px rgba(0, 0, 0, 0.45);
+  --glow-success: 0 0 16px rgba(164, 216, 103, 0.3);
+  --glow-danger: 0 0 18px rgba(255, 122, 110, 0.42);
+  --glow-ai: 0 0 16px rgba(143, 188, 233, 0.28);
 
-  --chart-1: #3f97ee;
-  --chart-2: #64718a;
-  --chart-3: #3ad683;
-  --chart-4: #f7b648;
-  --chart-5: #a49cff;
-  --chart-grid: #1a2640;
+  --chart-1: #63d0b9;
+  --chart-2: #6f6b63;
+  --chart-3: #a4d867;
+  --chart-4: #f2b357;
+  --chart-5: #8fbce9;
+  --chart-grid: rgba(255, 255, 255, 0.07);
 
-  --focus-ring: #7bbfff;
-  --overlay: rgba(2, 6, 14, 0.66);
-  --theme-color: #060c18;
+  --focus-ring: #86dcc9;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --theme-color: #0a0d0c;
 }

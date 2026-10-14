@@ -1,7 +1,7 @@
 # GridMind frontend: rules for working in this repo
 
 ## Project
-GridMind is an agentic-AI system that manages a simulated campus microgrid (solar, battery, main grid, 4 hostels, 2 labs, library, admin block). AI agents forecast demand, plan, test plans in a digital twin, act, explain their reasoning, and learn from incidents.
+GridMind is an agentic-AI system that manages a simulated campus microgrid (solar, battery, main grid, hostels BH1/BH2/GH1/GH2, Electrical Lab, Computer Science Lab, library, lecture theatres, admin block, faculty compound). AI agents forecast demand, plan, test plans in a digital twin, act, explain their reasoning, and learn from incidents.
 
 - Tagline: **A control room that thinks, acts, and explains.**
 - This repo holds the website (landing page at `/`) and the Control Room app (`/app/*`).
@@ -18,7 +18,7 @@ GridMind is an agentic-AI system that manages a simulated campus microgrid (sola
 
 ## Design rules
 1. One hero per screen with one obvious primary action.
-2. The blue→teal gradient (`bg-hero`) is used ONLY on each screen's hero element.
+2. The pine glass hero (`bg-hero`) is used ONLY on each screen's hero element.
 3. Agent reasoning is always visible, never hidden behind a spinner.
 4. Status as small pills. Full-screen alarms only for real faults.
 5. No empty-looking data: seed realistic demo data. Friendly empty states only where truly empty.
@@ -26,9 +26,11 @@ GridMind is an agentic-AI system that manages a simulated campus microgrid (sola
 7. Every screen answers: Where am I? What can I do? What happens next?
 8. Grid state understandable in 3 s; product understandable in 10 s.
 
-Palette roles: green = healthy/clean · amber = generation/warning · blue→teal gradient = hero only · AI-blue = agent thinking · red = fault.
+Palette ("substation at dusk"): warm stone/graphite neutrals · verdigris = actions/accent · olive green = healthy/clean · copper-amber = generation/warning · steel blue = agent thinking · red = fault · pine glass = hero only.
+Colour themes (Settings → Appearance): Pine (default), Indigo, Ocean, Forest, Plum, Graphite — `data-palette` on <html>, colours in `src/styles/palettes.css`, list in `src/hooks/usePalette.ts`. They swap accent, hero, sky tint and backdrop pulses only; status colours never change.
+Surfaces are iOS-style glass (in the spirit of Rent Ledger): translucent token backgrounds + `glass` / `glass-strong` (blur, saturation, top-left sheen), white hairline `border-glass-border`, floating sidebar, top bar and tab bar. Behind them sits `GridBackdrop`: dusk sky, low sun, campus skyline with pylons and a turbine (`CampusSkyline`), the perspective feeder network, and a few glass bubbles. Keep it calm.
 Type: Plus Jakarta Sans for UI, JetBrains Mono for numbers/logs only. Body text ≥ 14px.
-Surfaces: 12–16px radius, 1px borders, soft shadows. Lucide icons only (stroke 1.75).
+Surfaces: 12–24px radius, 1px borders, soft shadows with a top glass highlight. Lucide icons only (stroke 1.75).
 Never look like a crypto dashboard, neon hacker terminal, SCADA screen, admin template or cartoon app.
 
 ## Theme system
@@ -56,7 +58,7 @@ Keep components small. No ad-hoc page styling: reuse `components/ui`.
 
 ## Data rule
 - Pages and components import data functions from `src/services` only, never from mock files.
-- Service functions: `getGridState()`, `getForecast()`, `injectFault()`, `runCommanderStep()`, `getThoughtTrace()`, `getIncidentMemory()`, `getResults()`, `setGoal()`.
+- Service functions: `getGridState()`, `getForecast()`, `injectFault()`, `runOrchestratorStep()`, `getThoughtTrace()`, `getIncidentMemory()`, `getResults()`, `setGoal()`.
 - Each mock is marked with a `// MOCK:` comment. Never present mock output as real AI.
 - Demo data: realistic Indian campus, UPPCL-style tariff slabs, evening peak 18:00–22:00, solar peak at midday. No lorem ipsum.
 - Never put API keys in the frontend.

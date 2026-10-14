@@ -30,7 +30,7 @@ export function Modal({ open, onOpenChange, trigger, title, description, childre
         <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out" />
         <Dialog.Content
           className={cn(
-            "fixed z-50 flex flex-col border border-border bg-surface-raised shadow-lg focus-visible:outline-none",
+            "glass-strong fixed z-50 flex flex-col border border-glass-border bg-surface-solid/92 shadow-lg focus-visible:outline-none",
             variant === "center" &&
               "top-1/2 left-1/2 max-h-[85dvh] w-[calc(100vw-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl data-[state=open]:animate-pop-in data-[state=closed]:animate-fade-out",
             variant === "full" &&

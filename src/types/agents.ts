@@ -1,7 +1,7 @@
 import type { ControlMode, FaultType, ISODate } from "./grid";
 
 export type AgentId =
-  | "commander"
+  | "orchestrator"
   | "forecaster"
   | "zone"
   | "planner"
