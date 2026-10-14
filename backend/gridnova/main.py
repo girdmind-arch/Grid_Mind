@@ -16,6 +16,7 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
@@ -38,6 +39,8 @@ grid = LiveGrid(weather)
 memory = Memory()
 orchestrator = Orchestrator(grid, memory)
 TICK_S = 5.0
+# Fallback / Manual switches revert to AI Control after this long (0 = never).
+MODE_TTL_S = float(os.environ.get("GRIDNOVA_MODE_TTL_MIN", "10")) * 60
 
 
 def _agent_loop():
@@ -45,6 +48,8 @@ def _agent_loop():
     while True:
         time.sleep(TICK_S)
         try:
+            if grid.expire_mode(MODE_TTL_S):
+                logging.getLogger("gridnova.agents").info("control mode reset to AI after %.0f min", MODE_TTL_S / 60)
             orchestrator.tick()
         except Exception:  # keep the loop alive; the error is in the logs
             logging.getLogger("gridnova.agents").exception("agent tick failed")
@@ -58,6 +63,7 @@ async def lifespan(_app):
 
 
 app = FastAPI(title="GridNova API", version="2.0.0", lifespan=lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=600)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
