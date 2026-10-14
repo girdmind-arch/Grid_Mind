@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, useState, type ReactNode } from "react";
+import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import { Box, LayoutGrid } from "lucide-react";
 import type { GridState } from "@/types/grid";
 import { SegmentedControl, Skeleton } from "@/components/ui";
@@ -52,8 +52,23 @@ export function GridView({ state, className, compactToggle }: { state: GridState
 
   const plan = <GridDiagram state={state} />;
 
+  // The 3D engine is a big download: fetch it only once the grid is near the screen.
+  const holder = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = holder.current;
+    if (!el || near) return;
+    if (!("IntersectionObserver" in window)) {
+      setNear(true);
+      return;
+    }
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setNear(true), { rootMargin: "400px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near, view]);
+
   return (
-    <div className={cn("min-w-0", className)}>
+    <div ref={holder} className={cn("min-w-0", className)}>
       {canGl && (
         <div className={cn("mb-3 flex items-center gap-3", compactToggle ? "justify-end" : "justify-between")}>
           {!compactToggle && (
@@ -78,9 +93,13 @@ export function GridView({ state, className, compactToggle }: { state: GridState
             <figcaption className="sr-only">
               3D model of the campus grid. The same values are in the plan view.
             </figcaption>
-            <Suspense fallback={<div style={{ height }}><Skeleton className="h-full" /></div>}>
-              <Grid3D state={state} height={height} />
-            </Suspense>
+            {near ? (
+              <Suspense fallback={<div style={{ height }}><Skeleton className="h-full" /></div>}>
+                <Grid3D state={state} height={height} />
+              </Suspense>
+            ) : (
+              <div style={{ height }}><Skeleton className="h-full" /></div>
+            )}
           </figure>
         </Fallback>
       ) : (

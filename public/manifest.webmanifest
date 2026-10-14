@@ -1,0 +1,22 @@
+{
+  "name": "GridMind: Smart Grid Intelligence",
+  "short_name": "GridMind",
+  "description": "An agentic-AI control room for a campus microgrid that thinks, acts, and explains.",
+  "id": "./app",
+  "start_url": "./app?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e9e6df",
+  "theme_color": "#15302b",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Control Room", "url": "./app", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Scenarios", "url": "./app/scenarios", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -29,7 +29,7 @@ export function AppShell() {
         <main
           id="main"
           tabIndex={-1}
-          className="mx-auto max-w-[var(--content-max)] px-[var(--gutter)] pt-6 pb-[calc(var(--bottomnav-h)+32px)] focus:outline-none sm:pt-8 lg:px-[var(--gutter-lg)] lg:pb-12 print:max-w-none print:p-0"
+          className="mx-auto max-w-[var(--content-max)] px-[var(--gutter)] pt-6 pb-[calc(var(--bottomnav-h)+env(safe-area-inset-bottom)+32px)] focus:outline-none sm:pt-8 lg:px-[var(--gutter-lg)] lg:pb-12 print:max-w-none print:p-0"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

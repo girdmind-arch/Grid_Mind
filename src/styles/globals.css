@@ -122,6 +122,17 @@
   }
   html {
     background-color: var(--bg);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-x: none;
+  }
+  /* Taps respond instantly (no double-tap-zoom delay) and never select text by accident. */
+  a, button, summary, [role="button"], [role="tab"], label, select, input[type="range"] {
+    touch-action: manipulation;
+  }
+  button, [role="button"], [role="tab"], nav a {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
   body {
     background-color: transparent;
@@ -410,4 +421,33 @@ html.theme-transition *::after {
 }
 .grid3d--compact .grid3d-label__sub {
   display: none;
+}
+
+/* ---------- phone / installed-app polish ---------- */
+/* Inputs at 16px stop iOS zooming the page when one is focused. */
+@media (pointer: coarse) {
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+/* Lighter blur on phones: big backdrop blurs are the main GPU cost there. */
+@media (max-width: 639px) {
+  :root,
+  :root[data-theme] {
+    --glass-blur: 16px;
+  }
+}
+/* Installed as an app there is no browser bar: selecting text by accident while
+   scrolling is annoying, so only real text fields and prose stay selectable. */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  input, textarea, [contenteditable], p, h1, h2, h3, pre, code {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }

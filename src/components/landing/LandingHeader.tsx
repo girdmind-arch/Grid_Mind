@@ -12,7 +12,7 @@ export const LANDING_LINKS = [
 /** Sticky site header: logo, section links (desktop), theme toggle, the demo button. */
 export function LandingHeader() {
   return (
-    <header className="sticky top-0 z-20 px-[var(--gutter)] pt-3 lg:px-[var(--gutter-lg)]">
+    <header className="sticky top-0 z-20 px-[var(--gutter)] pt-[calc(env(safe-area-inset-top)+12px)] lg:px-[var(--gutter-lg)]">
       <div className="glass-strong mx-auto flex h-[58px] w-full max-w-[var(--content-max)] items-center justify-between gap-4 rounded-xl border border-glass-border bg-surface-solid/92 px-3 shadow-md sm:px-4">
         <Logo />
         <nav aria-label="Sections" className="hidden md:block">
