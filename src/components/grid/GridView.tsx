@@ -58,7 +58,7 @@ export function GridView({ state, className, compactToggle }: { state: GridState
         <div className={cn("mb-3 flex items-center gap-3", compactToggle ? "justify-end" : "justify-between")}>
           {!compactToggle && (
             <p className="text-[13px] text-fg-subtle">
-              {view === "3d" ? (narrow ? "Live 3D campus. Numbers update every few seconds." : "Live 3D campus. Drag to turn it.") : "Flat plan of the same grid."}
+              {view === "3d" ? (narrow ? "Live 3D campus. Tap a building for details." : "Live 3D campus. Drag to turn it, click a building for details.") : "Flat plan of the same grid."}
             </p>
           )}
           <SegmentedControl
