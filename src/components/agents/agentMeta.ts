@@ -38,4 +38,5 @@ export const STATUS_LOOK: Record<AgentStatus, { label: string; tone: "neutral" |
   thinking: { label: "Thinking", tone: "ai" },
   acting: { label: "Acting", tone: "accent" },
   waiting: { label: "Waiting for you", tone: "warning" },
+  paused: { label: "Paused", tone: "warning" },
 };
