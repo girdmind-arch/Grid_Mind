@@ -7,7 +7,7 @@ import { AGENT_LOOK, STATUS_LOOK } from "./agentMeta";
 export function AgentCard({ agent, className, children }: { agent: Agent; className?: string; children?: React.ReactNode }) {
   const { icon: Icon, tone } = AGENT_LOOK[agent.id];
   const status = STATUS_LOOK[agent.status];
-  const busy = agent.status !== "idle";
+  const busy = agent.status !== "idle" && agent.status !== "paused";
 
   return (
     <article
