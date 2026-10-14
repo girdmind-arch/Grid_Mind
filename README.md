@@ -56,6 +56,9 @@ Backend tests: `cd backend && pip install pytest httpx && python -m pytest`.
 
 **Any static host** (Netlify, Vercel, Cloudflare Pages), demo data only. Build with `npm run build` and serve `dist/`, with every unknown path falling back to `index.html`. No `BASE_PATH` is needed at a domain root.
 
+## Using it as a phone app
+GridMind is an installable web app (PWA). Open the deployed site on a phone, then Settings → App, or use the browser menu: **Add to Home Screen** (Safari) or **Install app** (Chrome/Edge). It opens full screen, respects the notch and home bar, and after the first visit works without a signal (demo data). The service worker (`sw.js`) is generated at build time by `vite.config.ts`; the manifest and icons are in `public/`. To refresh the icons, edit `public/favicon.svg` and re-export the PNGs in `public/icons/`.
+
 ## What's inside
 
 | Route | Page | What it shows |

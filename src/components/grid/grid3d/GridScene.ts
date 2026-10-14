@@ -80,6 +80,7 @@ function readPalette(): Palette {
 const ZONE_X = [0, 3.1, 6.2, 9.3, 12.4];
 const ROW_Z = { top: -4.6, bottom: 4.6 };
 const SPINE_Z = 0;
+const NARROW_STRETCH = 1.24;
 const HUB = new THREE.Vector3(-3.6, 0, 0);
 const SRC = {
   solar: new THREE.Vector3(-9.6, 0, -4.6),
@@ -92,6 +93,7 @@ interface NodeView {
   ring: THREE.LineLoop;
   label: CSS2DObject;
   model: THREE.Group;
+  slot?: number; // position along the campus (zones only)
   heat: THREE.Mesh; // coloured pad under the building: how hard it is working
   lift: number; // current hover/selection lift
   liftTarget: number;
@@ -220,7 +222,8 @@ export class GridScene {
     this.pal = readPalette();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarsePointer ? 1.5 : 1.75));
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -366,7 +369,7 @@ export class GridScene {
     return { mesh, ring };
   }
 
-  private addNode(id: string, pos: THREE.Vector3, size: [number, number], model: THREE.Group, lift = 0, labelInFront = false) {
+  private addNode(id: string, pos: THREE.Vector3, size: [number, number], model: THREE.Group, lift = 0, labelInFront = false, slot?: number) {
     const group = new THREE.Group();
     group.position.copy(pos);
     const { mesh, ring } = this.platform(size);
@@ -400,7 +403,7 @@ export class GridScene {
     else label.position.set(0, Math.max(1.2, top) + 0.75 + lift, 0);
     group.add(label);
     this.root.add(group);
-    this.nodes.set(id, { group, ring, label, model, heat: pad, lift: 0, liftTarget: 0 });
+    this.nodes.set(id, { group, ring, label, model, heat: pad, lift: 0, liftTarget: 0, slot });
   }
 
   private buildNodes() {
@@ -427,9 +430,18 @@ export class GridScene {
       // Neighbouring labels sit at alternating heights so they never overlap.
       // Back row: labels above the roofs at alternating heights. Front row: labels
       // in front of the platforms (also alternating), so neighbours never overlap.
-      if (row === "top") this.addNode(zone.id, pos, [2.4, 2.2], model, index % 2 === 1 ? 1.25 : 0);
-      else this.addNode(zone.id, pos, [2.4, 2.2], model, index % 2 === 1 ? 1.9 : 0, true);
+      if (row === "top") this.addNode(zone.id, pos, [2.4, 2.2], model, index % 2 === 1 ? 1.25 : 0, false, index);
+      else this.addNode(zone.id, pos, [2.4, 2.2], model, index % 2 === 1 ? 1.9 : 0, true, index);
     }
+  }
+
+  /**
+   * x of the i-th building slot. On a phone the campus is turned to run top to
+   * bottom, where the card has spare height but little width, so the slots
+   * are spread out along it (this gives the labels room).
+   */
+  private zx(i: number) {
+    return ZONE_X[i] * (this.narrow ? NARROW_STRETCH : 1);
   }
 
   /** Residential buildings along the back row, academic/admin along the front. */
@@ -438,8 +450,8 @@ export class GridScene {
     const back = zones.filter(residential).slice(0, ZONE_X.length);
     const front = zones.filter((z) => !residential(z)).slice(0, ZONE_X.length);
     return [
-      ...back.map((zone, i) => ({ zone, index: i, pos: new THREE.Vector3(ZONE_X[i], 0, ROW_Z.top), row: "top" as const, x: ZONE_X[i] })),
-      ...front.map((zone, i) => ({ zone, index: i, pos: new THREE.Vector3(ZONE_X[i], 0, ROW_Z.bottom), row: "bottom" as const, x: ZONE_X[i] })),
+      ...back.map((zone, i) => ({ zone, index: i, pos: new THREE.Vector3(this.zx(i), 0, ROW_Z.top), row: "top" as const, x: this.zx(i) })),
+      ...front.map((zone, i) => ({ zone, index: i, pos: new THREE.Vector3(this.zx(i), 0, ROW_Z.bottom), row: "bottom" as const, x: this.zx(i) })),
     ];
   }
 
@@ -786,10 +798,12 @@ export class GridScene {
   resize(width: number, height: number) {
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
+    const wasNarrow = this.narrow;
     this.narrow = width < 520;
+    if (wasNarrow !== this.narrow) for (const n of this.nodes.values()) if (n.slot !== undefined) n.group.position.x = this.zx(n.slot);
     const wasCompact = this.compact;
     this.compact = width < 760;
-    if (wasCompact !== this.compact && this.state) this.update(this.state);
+    if ((wasCompact !== this.compact || wasNarrow !== this.narrow) && this.state) this.update(this.state);
     this.renderer.setSize(this.width, this.height, false);
     this.renderer.domElement.style.width = `${this.width}px`;
     this.renderer.domElement.style.height = `${this.height}px`;

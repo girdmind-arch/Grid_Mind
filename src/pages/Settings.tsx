@@ -1,9 +1,10 @@
-import { Clock3, Lock, MapPin, Palette, Target } from "lucide-react";
+import { Clock3, Lock, MapPin, Palette, Smartphone, Target } from "lucide-react";
 import { PageHeader, Tabs, TabsContent, TabsList, TabsTrigger, ThemeSwitcher } from "@/components/ui";
 import { ControlModeHero } from "@/components/settings/ControlModeHero";
 import { GoalPresets } from "@/components/settings/GoalPresets";
 import { SimulationClock } from "@/components/settings/SimulationClock";
 import { CampusLocationPicker } from "@/components/settings/CampusLocationPicker";
+import { InstallApp } from "@/components/settings/InstallApp";
 import { ColourThemePicker } from "@/components/settings/ColourThemePicker";
 import { GuardrailRules } from "@/components/agents/GuardrailRules";
 
@@ -46,6 +47,13 @@ const TABS = [
         </section>
       </div>
     ),
+  },
+  {
+    value: "app",
+    label: "App",
+    icon: Smartphone,
+    description: "Put GridMind on your home screen. It opens full screen and keeps working without a signal.",
+    content: <InstallApp />,
   },
   {
     value: "guardrails",
