@@ -1,5 +1,8 @@
 import { Link } from "react-router";
-import { Play } from "lucide-react";
+import { Pause, Play } from "lucide-react";
+import { useAppStore } from "@/store/appStore";
+import { setControlMode } from "@/services";
+import { toast } from "@/components/ui";
 import { useScenarioStore } from "@/store/scenarioStore";
 import { Badge, Button, Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { AgentCard } from "@/components/agents/AgentCard";
@@ -11,10 +14,22 @@ export default function Agents() {
   const { agents, status, error, retry } = useLiveAgents();
   const phase = useScenarioStore((s) => s.phase);
   const decisions = useScenarioStore((s) => s.decisions);
-  const busy = agents?.filter((a) => a.status !== "idle") ?? [];
+  const mode = useAppStore((s) => s.mode);
+  const setMode = useAppStore((s) => s.setMode);
+  const busy = agents?.filter((a) => a.status !== "idle" && a.status !== "paused") ?? [];
+  const resume = async () => {
+    try {
+      const ack = await setControlMode("ai");
+      setMode(ack.mode);
+    } catch {
+      toast({ title: "Could not resume AI Control.", description: "Nothing was changed. Try again.", tone: "warning" });
+    }
+  };
 
   const liveLine =
-    phase === "responding"
+    mode !== "ai"
+      ? "Some agents are paused while another control mode is on."
+      : phase === "responding"
       ? `${busy.map((a) => a.name).join(", ")} are working on a scenario right now.`
       : phase === "awaiting-approval"
         ? "The Guardrail paused a high-impact plan. It is waiting for your approval."
@@ -42,6 +57,18 @@ export default function Agents() {
           </Link>
         </Button>
       </Card>
+
+      {mode !== "ai" && (
+        <div role="status" className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-fg">
+          <Pause aria-hidden className="size-4 shrink-0 text-warning" strokeWidth={1.75} />
+          <p className="min-w-0 flex-1">
+            {mode === "fallback"
+              ? "Agents are paused: fixed safety rules are running the grid (Fallback mode). The setting is shared by everyone using this app."
+              : "Agents are paused: Manual mode is on, so they only advise. The setting is shared by everyone using this app."}
+          </p>
+          <Button size="sm" onClick={resume}>Resume AI Control</Button>
+        </div>
+      )}
 
       {status === "error" && !agents && <ErrorState className="mt-4" message={error ?? undefined} onRetry={retry} />}
 
