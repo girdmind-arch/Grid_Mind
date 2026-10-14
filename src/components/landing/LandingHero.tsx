@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { USE_MOCKS, getGridState } from "@/services";
 import { useService } from "@/hooks/useService";
 import { Badge, Button, Skeleton } from "@/components/ui";
-import { GridDiagram } from "@/components/grid/GridDiagram";
+import { GridView } from "@/components/grid/GridView";
 import { formatKw } from "@/utils/format";
 
 /** The page's one gradient hero: tagline, what GridMind is, the demo button, and a live grid preview. */
@@ -49,7 +49,7 @@ export function LandingHero() {
               </Badge>
             </div>
             {grid.data ? (
-              <GridDiagram state={grid.data} />
+              <GridView state={grid.data} compactToggle />
             ) : (
               <Skeleton className="h-[470px]" />
             )}

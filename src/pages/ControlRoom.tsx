@@ -7,7 +7,8 @@ import { useSimClock } from "@/hooks/useSimClock";
 import { useAppStore } from "@/store/appStore";
 import { useScenarioStore } from "@/store/scenarioStore";
 import { Badge, Card, ErrorState, IconTile, Modal, PageHeader, Skeleton } from "@/components/ui";
-import { GridDiagram, GridLegend } from "@/components/grid/GridDiagram";
+import { GridLegend } from "@/components/grid/GridDiagram";
+import { GridView } from "@/components/grid/GridView";
 import { ScenarioBanner } from "@/components/scenarios/ScenarioBanner";
 import { SituationHero } from "@/components/control-room/SituationHero";
 import { StatStrip } from "@/components/control-room/StatStrip";
@@ -80,14 +81,14 @@ export default function ControlRoom() {
               Live
             </Badge>
           </div>
-          {grid.data ? <GridDiagram state={grid.data} /> : <Skeleton className="h-[420px]" />}
+          {grid.data ? <GridView state={grid.data} /> : <Skeleton className="h-[460px]" />}
         </Card>
         <LatestDecision decision={shownDecision} className="min-w-0 xl:col-span-4" />
       </div>
 
       <Modal open={gridOpen} onOpenChange={setGridOpen} title="Live grid" description={systemSummary(grid.data)} variant="full">
         <div className="mx-auto w-full max-w-5xl py-2">
-          {grid.data && <GridDiagram state={grid.data} />}
+          {grid.data && <GridView state={grid.data} />}
           <GridLegend className="mt-6" />
         </div>
       </Modal>
