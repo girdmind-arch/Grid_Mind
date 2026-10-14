@@ -9,7 +9,7 @@ export type AgentId =
   | "critic"
   | "guardrail";
 
-export type AgentStatus = "idle" | "thinking" | "acting" | "waiting";
+export type AgentStatus = "idle" | "thinking" | "acting" | "waiting" | "paused";
 
 export interface Agent {
   id: AgentId;
