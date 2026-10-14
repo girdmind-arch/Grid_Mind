@@ -5,7 +5,7 @@ export type ControlMode = "ai" | "fallback" | "manual";
 export type Trend = "up" | "down" | "flat";
 export type ISODate = string;
 
-export type ZoneKind = "hostel" | "lab" | "library" | "admin";
+export type ZoneKind = "hostel" | "lab" | "library" | "admin" | "academic" | "residence";
 export type ZoneStatus = "normal" | "reduced" | "faulted" | "isolated";
 export type ZonePriority = "critical" | "high" | "normal";
 
