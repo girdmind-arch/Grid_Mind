@@ -40,8 +40,8 @@ export function LatestDecision({ decision, className }: { decision?: Decision; c
       ) : (
         <>
           <p className="mt-4 font-mono text-xs text-fg-subtle">{formatTime(decision.startedAt)}</p>
-          <p className="mt-1 text-[17px] leading-snug font-semibold text-fg">{plan ? `Plan ${plan.id}: ${plan.title}` : decision.title}</p>
-          <p className="mt-1.5 text-sm text-fg-muted">{pending ? decision.approval?.request : decision.chosenReason}</p>
+          <p className="mt-1 max-w-3xl text-[17px] leading-snug font-semibold text-fg">{plan ? `Plan ${plan.id}: ${plan.title}` : decision.title}</p>
+          <p className="mt-1.5 max-w-3xl text-sm text-fg-muted">{pending ? decision.approval?.request : decision.chosenReason}</p>
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
             <Button variant={pending ? "primary" : "secondary"} size="sm" onClick={() => setOpen(true)}>
               <MessageCircleQuestion /> {pending ? "Review and decide" : "Why?"}
