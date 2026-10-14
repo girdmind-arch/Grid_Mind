@@ -10,7 +10,7 @@ import { webglAvailable } from "./grid3d/webgl";
 const Grid3D = lazy(() => import("./grid3d/Grid3D"));
 
 type View = "3d" | "plan";
-const KEY = "gridmind-grid-view";
+const KEY = "gridnova-grid-view";
 
 function readView(): View {
   try {

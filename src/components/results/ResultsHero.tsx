@@ -27,7 +27,7 @@ function HeroNumber({ value, digits, unit, label, note }: { value: number; digit
 /** The judge screen hero: three headline numbers vs. the no-AI baseline. */
 export function ResultsHero({ results }: { results: Results }) {
   const { costSavedPct, peakReducedPct, recovery } = results.headline;
-  const faster = recovery.baselineMin / recovery.gridmindMin;
+  const faster = recovery.baselineMin / recovery.gridnovaMin;
 
   return (
     <Card variant="hero" padding="lg">
@@ -36,14 +36,14 @@ export function ResultsHero({ results }: { results: Results }) {
         {results.dataNote}
       </span>
       <h2 className="mt-4 max-w-2xl text-[26px] leading-tight font-bold tracking-tight sm:text-[30px]">
-        Same campus, same weather. GridMind spends less and recovers faster.
+        Same campus, same weather. GridNova spends less and recovers faster.
       </h2>
 
       <dl className="mt-7 grid gap-x-10 gap-y-6 sm:grid-cols-3">
         <HeroNumber value={costSavedPct} digits={1} unit="%" label="Lower electricity cost" note="Across five simulated weekdays" />
         <HeroNumber value={peakReducedPct} digits={1} unit="%" label="Lower evening peak" note="Highest grid import of the day" />
         <HeroNumber
-          value={recovery.gridmindMin}
+          value={recovery.gridnovaMin}
           digits={1}
           unit="min"
           label="Fault recovery"

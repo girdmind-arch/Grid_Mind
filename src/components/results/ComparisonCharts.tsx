@@ -18,7 +18,7 @@ const RecoveryTooltip = makeTooltip(minutes);
 /** Electricity bill per day, last school week. Grouped columns. */
 export function CostChart({ data }: { data: ResultsSeriesPoint[] }) {
   // Round the axis up to a clean step (₹20K below ₹1 lakh, ₹50K above).
-  const top = Math.max(...data.flatMap((d) => [d.gridmind, d.baseline]));
+  const top = Math.max(...data.flatMap((d) => [d.gridnova, d.baseline]));
   const stepInr = top > 100_000 ? 50_000 : 20_000;
   const costMax = Math.ceil(top / stepInr) * stepInr;
   const costTicks = Array.from({ length: costMax / stepInr + 1 }, (_, i) => i * stepInr);
@@ -47,8 +47,8 @@ export function CostChart({ data }: { data: ResultsSeriesPoint[] }) {
 /** Campus demand through the evening peak. Two lines; the 19:00 peak is labelled. */
 export function PeakChart({ data }: { data: ResultsSeriesPoint[] }) {
   // Label only the highest point of each line (the numbers the headline compares).
-  const peakOf = (key: "gridmind" | "baseline") => data.reduce((a, b) => (b[key] > a[key] ? b : a)).label;
-  const peaks = { gridmind: peakOf("gridmind"), baseline: peakOf("baseline") };
+  const peakOf = (key: "gridnova" | "baseline") => data.reduce((a, b) => (b[key] > a[key] ? b : a)).label;
+  const peaks = { gridnova: peakOf("gridnova"), baseline: peakOf("baseline") };
 
   return (
     <ChartCard
@@ -137,7 +137,7 @@ export function RecoveryChart({ data }: { data: ResultsSeriesPoint[] }) {
                 position="right"
                 offset={6}
                 formatter={(v: unknown) => formatNumber(Number(v), 1)}
-                style={{ fill: s.key === "gridmind" ? "var(--text)" : "var(--text-muted)", fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600 }}
+                style={{ fill: s.key === "gridnova" ? "var(--text)" : "var(--text-muted)", fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600 }}
               />
             </Bar>
           ))}

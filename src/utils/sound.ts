@@ -3,7 +3,7 @@
 
 export type Cue = "alarm" | "step" | "resolve" | "attention";
 
-const KEY = "gridmind-sound";
+const KEY = "gridnova-sound";
 let ctx: AudioContext | null = null;
 
 export function soundEnabled(): boolean {

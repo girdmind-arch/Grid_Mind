@@ -89,7 +89,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Try “battery”, “outage”, “results”…"
-          aria-label="Search GridMind"
+          aria-label="Search GridNova"
           className="h-11 w-full rounded-md border border-border bg-surface pr-3 pl-10 text-[15px] text-fg placeholder:text-fg-subtle"
         />
       </form>

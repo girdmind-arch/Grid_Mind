@@ -36,7 +36,7 @@ export function ScenarioLauncher({ onRun, disabled, className }: ScenarioLaunche
       tone: "ok",
       text:
         `Understood as ${SCENARIOS[parsed.type].title} · ${SEVERITY[parsed.severity - 1]} · ${parsed.durationMin} min.` +
-        (also.length ? ` GridMind handles one fault at a time, so ${also.join(" and ")} can run next.` : ""),
+        (also.length ? ` GridNova handles one fault at a time, so ${also.join(" and ")} can run next.` : ""),
     });
     onRun(parsed.type, parsed.severity, parsed.durationMin);
   };

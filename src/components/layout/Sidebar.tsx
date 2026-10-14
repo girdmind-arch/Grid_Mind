@@ -40,7 +40,7 @@ export function Sidebar() {
         <span>
           {USE_MOCKS
             ? "Simulated campus. Demo data until the backend is connected."
-            : "Simulated campus, computed live by the GridMind backend."}
+            : "Simulated campus, computed live by the GridNova backend."}
         </span>
       </div>
     </aside>

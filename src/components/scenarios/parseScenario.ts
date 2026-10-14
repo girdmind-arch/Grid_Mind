@@ -23,7 +23,7 @@ export interface ParsedScenario {
   type: FaultType;
   severity: number;
   durationMin: 15 | 30 | 60;
-  /** Other faults the text mentioned (GridMind runs one at a time). */
+  /** Other faults the text mentioned (GridNova runs one at a time). */
   alsoMentioned: FaultType[];
 }
 

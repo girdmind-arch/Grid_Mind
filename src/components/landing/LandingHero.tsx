@@ -7,7 +7,7 @@ import { Badge, Button, Skeleton } from "@/components/ui";
 import { GridView } from "@/components/grid/GridView";
 import { formatKw } from "@/utils/format";
 
-/** The page's one gradient hero: tagline, what GridMind is, the demo button, and a live grid preview. */
+/** The page's one gradient hero: tagline, what GridNova is, the demo button, and a live grid preview. */
 export function LandingHero() {
   // With the live backend the preview refreshes every few seconds.
   const [tick, setTick] = useState(0);

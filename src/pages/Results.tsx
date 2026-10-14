@@ -27,12 +27,12 @@ export default function Results() {
     <>
       {/* Only in the PDF: says what the document is when it is read away from the app. */}
       <p className="mb-4 hidden text-sm text-fg-muted print:block">
-        GridMind · Results report · BITSETGO'26 · Simulated campus, {formatDate(simNow())} 2026
+        GridNova · Results report · BITSETGO'26 · Simulated campus, {formatDate(simNow())} 2026
       </p>
 
       <PageHeader
         title="Results"
-        description="GridMind compared with a no-AI baseline on the same simulated campus."
+        description="GridNova compared with a no-AI baseline on the same simulated campus."
         actions={
           data && (
             <Button variant="secondary" onClick={printPage} className="print:hidden" title="Opens the print dialog. Choose “Save as PDF”.">

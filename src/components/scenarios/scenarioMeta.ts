@@ -12,7 +12,7 @@ export const SCENARIOS: Record<
     icon: typeof Cloud;
     tone: IconTileTone;
     activeLabel: string;
-    /** What GridMind will do about it, in plain words. */
+    /** What GridNova will do about it, in plain words. */
     response: string;
     /** What each severity level (1–5) means for this scenario. */
     severity: [string, string, string, string, string];

@@ -14,7 +14,7 @@ import type { Plugin } from "vite";
  */
 function serviceWorker(): Plugin {
   return {
-    name: "gridmind-service-worker",
+    name: "gridnova-service-worker",
     apply: "build",
     generateBundle(_, bundle) {
       const core = new Set<string>(["index.html", "manifest.webmanifest", "favicon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png"]);
@@ -47,9 +47,9 @@ function serviceWorker(): Plugin {
   };
 }
 
-const SW_SOURCE = `/* GridMind service worker (generated at build time) */
+const SW_SOURCE = `/* GridNova service worker (generated at build time) */
 const VERSION = "__VERSION__";
-const CACHE = "gridmind-" + VERSION;
+const CACHE = "gridnova-" + VERSION;
 const CORE = __CORE__;
 const LATER = __LATER__;
 const scope = self.registration.scope;
@@ -64,7 +64,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      for (const k of await caches.keys()) if (k.startsWith("gridmind-") && k !== CACHE) await caches.delete(k);
+      for (const k of await caches.keys()) if (k.startsWith("gridnova-") && k !== CACHE) await caches.delete(k);
       await self.clients.claim();
       // Warm the rest in the background so every page works offline. Failures are fine.
       const c = await caches.open(CACHE);

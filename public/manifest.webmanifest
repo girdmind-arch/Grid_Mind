@@ -1,6 +1,6 @@
 {
-  "name": "GridMind: Smart Grid Intelligence",
-  "short_name": "GridMind",
+  "name": "GridNova: Smart Grid Intelligence",
+  "short_name": "GridNova",
   "description": "An agentic-AI control room for a campus microgrid that thinks, acts, and explains.",
   "id": "./app",
   "start_url": "./app?source=pwa",
