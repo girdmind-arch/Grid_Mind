@@ -177,3 +177,17 @@ def test_campus_can_move_anywhere_in_india(client):
     assert client.post("/api/location", json={"name": "London", "state": "", "lat": 51.5, "lon": -0.1}).status_code == 422
     lucknow = client.get("/api/locations/search", params={"q": "luck"}).json()["results"][0]
     client.post("/api/location", json={k: lucknow[k] for k in ("name", "state", "lat", "lon")})
+
+def test_manual_mode_expires_back_to_ai():
+    from gridnova.grid import LiveGrid
+
+    now = [1_000_000.0]
+    g = LiveGrid(wall=lambda: now[0], clock_mode="demo")
+    g.set_mode("fallback")
+    assert not g.expire_mode(600)  # just switched on: stays
+    now[0] += 601
+    assert g.expire_mode(600) and g.mode == "ai"
+    assert not g.expire_mode(600)  # already AI
+    g.set_mode("manual")
+    now[0] += 10_000
+    assert not g.expire_mode(0)  # ttl 0 = never expire
