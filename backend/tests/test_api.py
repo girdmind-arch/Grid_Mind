@@ -3,8 +3,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from gridmind import campus as c
-from gridmind.main import app
+from gridnova import campus as c
+from gridnova.main import app
 
 
 @pytest.fixture()
@@ -80,11 +80,11 @@ def test_grid_outage_waits_for_approval(client):
 
 def test_results_are_consistent(client):
     r = client.get("/api/results").json()
-    gm = sum(p["gridmind"] for p in r["cost"])
+    gm = sum(p["gridnova"] for p in r["cost"])
     base = sum(p["baseline"] for p in r["cost"])
     assert abs((1 - gm / base) * 100 - r["headline"]["costSavedPct"]) < 0.2
     assert r["headline"]["peakReducedPct"] > 10
-    assert r["runs"][2]["recoveryMin"] == r["headline"]["recovery"]["gridmindMin"]
+    assert r["runs"][2]["recoveryMin"] == r["headline"]["recovery"]["gridnovaMin"]
     assert [x["run"] for x in r["runs"]] == [1, 2, 3]
 
 
@@ -147,8 +147,8 @@ def test_control_state_survives_a_reload(client):
 def test_weather_drives_solar_and_demand():
     from datetime import datetime
 
-    from gridmind.grid import IST, LiveGrid
-    from gridmind.weather import Weather
+    from gridnova.grid import IST, LiveGrid
+    from gridnova.weather import Weather
 
     def weather(ghi, temp):
         w = Weather(fetch=False)

@@ -4,7 +4,7 @@ export type ThemePreference = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
 
 // Keep in sync with the no-flash script in index.html.
-const STORAGE_KEY = "gridmind-theme";
+const STORAGE_KEY = "gridnova-theme";
 const THEME_COLORS: Record<ResolvedTheme, string> = { light: "#e9e6df", dark: "#0a0d0c" };
 const darkQuery = () => window.matchMedia("(prefers-color-scheme: dark)");
 

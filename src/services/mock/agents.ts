@@ -29,7 +29,7 @@ export const DECISIONS: Decision[] = [
     chosenPlanId: "B",
     chosenReason: "Saves ₹4,180 tonight with the same low risk and only a small comfort trade-off.",
     explanation:
-      "Electricity from the grid is most expensive between 6 and 10 pm. Instead of buying it then, GridMind keeps the battery charged and uses it during those hours. Hostels are cooled slightly earlier so rooms stay comfortable. Labs are never touched.",
+      "Electricity from the grid is most expensive between 6 and 10 pm. Instead of buying it then, GridNova keeps the battery charged and uses it during those hours. Hostels are cooled slightly earlier so rooms stay comfortable. Labs are never touched.",
     usedMemory: { incidentId: "INC-38", summary: "Last week's heatwave peak: pre-cooling kept comfort above 95%." },
   },
   {
@@ -76,7 +76,7 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     chosenPlanId: "B",
     chosenReason: "Cheaper, and the battery still has enough left for the evening peak.",
     explanation:
-      "Clouds cut the solar power. Rather than buying the missing power from the grid, GridMind used a small part of the battery for the few minutes the clouds last. There is still plenty left for the evening.",
+      "Clouds cut the solar power. Rather than buying the missing power from the grid, GridNova used a small part of the battery for the few minutes the clouds last. There is still plenty left for the evening.",
     usedMemory: { incidentId: "INC-41", summary: "11 May cloud cover: keep 15% battery headroom." },
   },
   heatwave: {
@@ -97,7 +97,7 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     chosenPlanId: "B",
     chosenReason: "Avoids breaching the grid contract limit with a small comfort trade-off.",
     explanation:
-      "The heat made every AC on campus work harder. Buying all that extra power would cost more and push the campus over its grid limit. GridMind used the battery and set hostel cooling one degree warmer, which most people do not notice.",
+      "The heat made every AC on campus work harder. Buying all that extra power would cost more and push the campus over its grid limit. GridNova used the battery and set hostel cooling one degree warmer, which most people do not notice.",
     usedMemory: { incidentId: "INC-38", summary: "5 May heatwave: start pre-cooling 30 min before peak." },
   },
   line_failure: {
@@ -118,7 +118,7 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     chosenPlanId: "B",
     chosenReason: "Restores power in seconds instead of 45 minutes, within feeder limits.",
     explanation:
-      "A cable fault cut power to GH1. GridMind cut off the damaged cable so it is safe, then fed the hostel through a neighbouring cable that had spare room. Students lost power for only a few seconds.",
+      "A cable fault cut power to GH1. GridNova cut off the damaged cable so it is safe, then fed the hostel through a neighbouring cable that had spare room. Students lost power for only a few seconds.",
     usedMemory: { incidentId: "INC-40", summary: "8 May feeder fault: pre-check F2 capacity first." },
   },
   grid_outage: {
@@ -139,7 +139,7 @@ export const SCENARIO_DECISIONS: Record<FaultType, Omit<Decision, "id" | "starte
     chosenPlanId: "B",
     chosenReason: "Keeps every zone powered, and the battery lasts twice as long as the last outage (48 min).",
     explanation:
-      "The main power line to campus went down. GridMind switched the whole campus onto its own solar and battery. Labs keep full power. Hostels get enough for lights, fans and charging, so the battery lasts about 1 hour 40 minutes, twice as long as the last outage.",
+      "The main power line to campus went down. GridNova switched the whole campus onto its own solar and battery. Labs keep full power. Hostels get enough for lights, fans and charging, so the battery lasts about 1 hour 40 minutes, twice as long as the last outage.",
     usedMemory: { incidentId: "INC-35", summary: "29 Apr outage lasted 48 min; 60% hostels was enough." },
     approval: {
       status: "pending",

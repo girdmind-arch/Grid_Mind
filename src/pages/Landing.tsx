@@ -3,7 +3,7 @@ import { LandingHero } from "@/components/landing/LandingHero";
 import { AgentsSection, HowItWorksSection, StartHereSection } from "@/components/landing/LandingSections";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 
-/** The public website at "/": what GridMind is, in the order a judge reads it. */
+/** The public website at "/": what GridNova is, in the order a judge reads it. */
 export default function Landing() {
   return (
     <div className="relative flex min-h-dvh flex-col">

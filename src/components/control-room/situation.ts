@@ -38,5 +38,5 @@ export function describeSituation(state: GridState, latest: Decision | undefined
     return { headline: `Evening peak in ${mins} minutes. ${planLine}`, detail: "The battery will cover the peak instead of costly grid power." };
   }
   if (hour >= 18 && hour < 22) return { headline: `Evening peak is on until 22:00. ${planLine}`, detail: "The battery is covering part of the load." };
-  return { headline: "Off-peak hours. The grid is calm.", detail: "GridMind is recharging the battery at the cheapest rate." };
+  return { headline: "Off-peak hours. The grid is calm.", detail: "GridNova is recharging the battery at the cheapest rate." };
 }

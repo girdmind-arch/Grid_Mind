@@ -3,17 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="GridMind: an agentic-AI control room for a campus microgrid that thinks, acts, and explains." />
+    <meta name="description" content="GridNova: an agentic-AI control room for a campus microgrid that thinks, acts, and explains." />
     <meta name="theme-color" content="#e9e6df" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="GridMind" />
+    <meta name="apple-mobile-web-app-title" content="GridNova" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
-    <title>GridMind · Smart Grid Intelligence</title>
+    <title>GridNova · Smart Grid Intelligence</title>
     <!--
       No-flash theme script: runs before React so the first paint already uses
       the right theme. Keep the storage key in sync with src/hooks/useTheme.tsx.
@@ -22,7 +22,7 @@
       (function () {
         var pref = "system";
         try {
-          var saved = localStorage.getItem("gridmind-theme");
+          var saved = localStorage.getItem("gridnova-theme");
           if (saved === "light" || saved === "dark" || saved === "system") pref = saved;
         } catch (e) {}
         var dark =
@@ -32,7 +32,7 @@
         var root = document.documentElement;
         root.setAttribute("data-theme", theme);
         try {
-          var palette = localStorage.getItem("gridmind-palette");
+          var palette = localStorage.getItem("gridnova-palette");
           if (palette && /^(pine|indigo|ocean|forest|plum|graphite)$/.test(palette)) root.setAttribute("data-palette", palette);
         } catch (e) {}
         root.style.colorScheme = theme;

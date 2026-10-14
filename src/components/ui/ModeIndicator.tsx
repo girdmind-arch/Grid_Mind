@@ -12,7 +12,7 @@ export const MODE_INFO: Record<
   ai: {
     label: "AI Control",
     short: "AI",
-    description: "GridMind agents are managing the grid.",
+    description: "GridNova agents are managing the grid.",
     tone: "success",
     icon: Bot,
   },

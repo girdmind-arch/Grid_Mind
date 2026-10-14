@@ -1,5 +1,5 @@
 /*
- * GridMind design tokens.
+ * GridNova design tokens.
  *
  * Every color in the app comes from these variables. Light and dark are tuned
  * separately (not inverted). `data-theme` on <html> picks the set; it is set by
@@ -100,8 +100,8 @@
   --glow-danger: 0 0 0 3px rgba(179, 38, 30, 0.18);
   --glow-ai: 0 0 0 3px rgba(45, 91, 136, 0.15);
 
-  /* Charts: GridMind is the highlighted series, the no-AI baseline is grey. */
-  --chart-1: #0d6b5f; /* GridMind */
+  /* Charts: GridNova is the highlighted series, the no-AI baseline is grey. */
+  --chart-1: #0d6b5f; /* GridNova */
   --chart-2: #8a8478; /* baseline */
   --chart-3: #3b7414;
   --chart-4: #965400;

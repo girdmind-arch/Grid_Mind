@@ -142,7 +142,7 @@ export interface IncidentMemory {
 // ---------- Results ----------
 export interface ResultsSeriesPoint {
   label: string;
-  gridmind: number;
+  gridnova: number;
   baseline: number;
 }
 
@@ -151,7 +151,7 @@ export interface Results {
   headline: {
     costSavedPct: number;
     peakReducedPct: number;
-    recovery: { gridmindMin: number; baselineMin: number };
+    recovery: { gridnovaMin: number; baselineMin: number };
   };
   cost: ResultsSeriesPoint[]; // INR per day
   peak: ResultsSeriesPoint[]; // kW per hour

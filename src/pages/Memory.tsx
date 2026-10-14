@@ -42,7 +42,7 @@ export default function Memory() {
 
   return (
     <>
-      <PageHeader title="Memory" description="Every incident GridMind has handled, and the lesson it took from each." />
+      <PageHeader title="Memory" description="Every incident GridNova has handled, and the lesson it took from each." />
 
       <Card variant="hero" padding="lg">
         <h2 className="max-w-2xl text-[26px] leading-tight font-bold tracking-tight sm:text-[30px]">

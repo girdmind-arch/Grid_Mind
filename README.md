@@ -1,8 +1,8 @@
-# GridMind
+# GridNova
 
 **A control room that thinks, acts, and explains.**
 
-GridMind is an agentic-AI system that manages a simulated campus microgrid: solar, a 2 MWh battery, the main grid, 4 hostels (BH1, BH2, GH1, GH2), an Electrical Lab, a Computer Science Lab, a library, lecture theatres, an admin block and a faculty compound. AI agents forecast demand, build plans, test them in a digital twin, act within hard safety rules, explain their reasoning, and learn from every incident.
+GridNova is an agentic-AI system that manages a simulated campus microgrid: solar, a 2 MWh battery, the main grid, 4 hostels (BH1, BH2, GH1, GH2), an Electrical Lab, a Computer Science Lab, a library, lecture theatres, an admin block and a faculty compound. AI agents forecast demand, build plans, test them in a digital twin, act within hard safety rules, explain their reasoning, and learn from every incident.
 
 This repository holds the **website** (landing page at `/`), the **Control Room app** (`/app/*`) and the **FastAPI backend** (`backend/`: grid simulator, digital twin, forecaster, agent loop, memory, evaluation). It was built for **BITSETGO'26 (Agentic AI & ML)**. Without the backend, the website still runs on built-in demo data.
 
@@ -29,7 +29,7 @@ Requirements: Python 3.11+.
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn gridmind.main:app --reload --port 8000
+uvicorn gridnova.main:app --reload --port 8000
 ```
 
 Then, in another terminal at the repo root, run `VITE_API_URL=http://localhost:8000 npm run dev`. Or build once with `VITE_API_URL=/ npm run build`, and the backend serves the whole site at http://localhost:8000.
@@ -57,18 +57,18 @@ Backend tests: `cd backend && pip install pytest httpx && python -m pytest`.
 **Any static host** (Netlify, Vercel, Cloudflare Pages), demo data only. Build with `npm run build` and serve `dist/`, with every unknown path falling back to `index.html`. No `BASE_PATH` is needed at a domain root.
 
 ## Using it as a phone app
-GridMind is an installable web app (PWA). Open the deployed site on a phone, then Settings → App, or use the browser menu: **Add to Home Screen** (Safari) or **Install app** (Chrome/Edge). It opens full screen, respects the notch and home bar, and after the first visit works without a signal (demo data). The service worker (`sw.js`) is generated at build time by `vite.config.ts`; the manifest and icons are in `public/`. To refresh the icons, edit `public/favicon.svg` and re-export the PNGs in `public/icons/`.
+GridNova is an installable web app (PWA). Open the deployed site on a phone, then Settings → App, or use the browser menu: **Add to Home Screen** (Safari) or **Install app** (Chrome/Edge). It opens full screen, respects the notch and home bar, and after the first visit works without a signal (demo data). The service worker (`sw.js`) is generated at build time by `vite.config.ts`; the manifest and icons are in `public/`. To refresh the icons, edit `public/favicon.svg` and re-export the PNGs in `public/icons/`.
 
 ## What's inside
 
 | Route | Page | What it shows |
 | --- | --- | --- |
-| `/` | Landing | What GridMind is, how it works, the agents, a results teaser |
+| `/` | Landing | What GridNova is, how it works, the agents, a results teaser |
 | `/app` | Control Room | Live grid diagram, agent thought trace, operator goal, today's cost |
 | `/app/agents` | Agents | The seven agents, their live status, the decision loop, guardrails |
 | `/app/scenarios` | Scenarios | Inject a fault (cloud cover, heatwave, line failure, grid outage), watch the response, replay it |
 | `/app/memory` | Memory | Every incident handled and the lessons learned from it |
-| `/app/results` | Results | GridMind vs. a no-AI baseline: cost, peak, recovery, run-by-run learning, Save as PDF |
+| `/app/results` | Results | GridNova vs. a no-AI baseline: cost, peak, recovery, run-by-run learning, Save as PDF |
 | `/app/settings` | Settings | Operating mode (AI / Fallback / Manual), goal presets, guardrails, theme |
 
 Light, Dark and System themes are supported everywhere (System follows the device live).
@@ -91,14 +91,14 @@ src/
 └── utils/        helpers: cn, formatters, simulated clock, print
 
 backend/
-├── gridmind/
+├── gridnova/
 │   ├── campus.py      buildings, feeders, battery, tariff, daily demand and solar profiles
 │   ├── simulator.py   grid physics: one balanced step (solar + battery + grid = demand)
 │   ├── grid.py        the live grid: simulated clock, faults, current control policy
 │   ├── agents.py      Orchestrator loop: Plan A vs Plan B in the twin, Guardrail checks, explanations
 │   ├── forecast.py    the Forecaster: next 12 hours and notable events
 │   ├── memory.py      incidents and lessons
-│   ├── evaluation.py  Results: 5 simulated weekdays, GridMind vs no AI
+│   ├── evaluation.py  Results: 5 simulated weekdays, GridNova vs no AI
 │   └── main.py        FastAPI routes; also serves the built website
 └── tests/             API contract tests (pytest)
 ```
@@ -108,16 +108,16 @@ Project rules for contributors (design, theme tokens, data flow) are in [`CLAUDE
 ## How the backend works
 
 - **Live clock and weather.** By default the campus runs on real Indian time. Every 15 minutes the backend fetches the real hourly temperature, solar irradiance and cloud cover for the campus location from [Open-Meteo](https://open-meteo.com) (free, no API key). Solar output comes from the irradiance, and cooling load rises and falls with the temperature. At midnight the "cost today" meter resets. If the weather service can't be reached, the backend uses a typical hot-day profile and the top bar says so. **Demo evening** (Settings) restarts the campus at 17:20 with today's weather at 1×, 10× or 60× speed, so judges can watch the evening peak arrive.
-- **Anywhere in India.** Settings → Campus location searches any city, town or campus in India (Open-Meteo place search, with a built-in list of about 30 cities as a fallback). Moving the campus switches the live weather to that place, applies that state's time-of-day tariff and DISCOM (`backend/gridmind/locations.py`), and re-simulates today. Results change too, because they use the state's tariff. The tariffs are illustrative; check each DISCOM's latest tariff order. Heating load is not modelled, so in a cold winter the cooling load just drops to its minimum.
+- **Anywhere in India.** Settings → Campus location searches any city, town or campus in India (Open-Meteo place search, with a built-in list of about 30 cities as a fallback). Moving the campus switches the live weather to that place, applies that state's time-of-day tariff and DISCOM (`backend/gridnova/locations.py`), and re-simulates today. Results change too, because they use the state's tariff. The tariffs are illustrative; check each DISCOM's latest tariff order. Heating load is not modelled, so in a cold winter the cooling load just drops to its minimum.
 - **Agents that keep watching.** Every few seconds the Orchestrator checks whether time or weather has moved on, and re-plans for the period it is in: recharge at night, hold the battery by day, shave the evening peak. Each re-plan appears in the thought trace, and the website refreshes every 5 seconds.
 - **Grid simulator.** Every simulated minute, building loads follow a hot-weekday profile. Solar follows the clear-sky curve (cut by clouds in a cloud-cover scenario), and the battery and grid make up the rest. Faults really change the grid: a line failure takes a hostel off its feeder, and a grid outage islands the campus.
 - **Digital twin and planning.** For each situation the Orchestrator builds Plan A and Plan B and simulates both up to 22:00. The battery's evening import cap is sized by binary search in the twin. Each result is checked against the six guardrails (labs powered, battery 20–90%, feeders ≤ 90%, import ≤ 1,600 kW, hostel comfort, approval for high-impact actions). The passing plan with the best score for the operator's goal wins. The score adds cost, a comfort penalty, and a value-of-lost-load charge for any building left dark.
 - **Goals.** Goal text changes the planner: "storm" keeps a 60% battery reserve, "battery health" 40%, "comfort" protects hostel cooling, and "cost" accepts small comfort trade-offs.
 - **Memory and learning.** Each incident is stored with what was done. Run 1 of a scenario writes a lesson, and replays reuse it, which shortens detection and analysis in the response-time model.
-- **Results and what-if.** Five weekdays with different weather are simulated minute by minute, with GridMind and with no AI (battery idle, no load management). Daily cost includes energy, contract-limit penalties, a demand charge on the highest import, and the off-peak cost of refilling the battery. On the Results page, the what-if panel re-runs all five days with a different battery size, solar array, peak tariff or temperature (`POST /api/results/whatif`).
+- **Results and what-if.** Five weekdays with different weather are simulated minute by minute, with GridNova and with no AI (battery idle, no load management). Daily cost includes energy, contract-limit penalties, a demand charge on the highest import, and the off-peak cost of refilling the battery. On the Results page, the what-if panel re-runs all five days with a different battery size, solar array, peak tariff or temperature (`POST /api/results/whatif`).
 - **Explanations** are plain-language templates filled with the computed numbers. No external AI service is called.
 
-All model values (tariff, profiles, battery size, demand charge, response times) are illustrative assumptions documented in `backend/gridmind/campus.py` and `agents.py`.
+All model values (tariff, profiles, battery size, demand charge, response times) are illustrative assumptions documented in `backend/gridnova/campus.py` and `agents.py`.
 
 ## Connecting the website to a backend
 
@@ -135,7 +135,7 @@ If the backend is unreachable or returns an error, the UI shows a calm message (
 
 ### Endpoints the frontend expects
 
-`backend/gridmind/main.py` implements all of them. If the paths change, update them in one place: `src/services/index.ts`.
+`backend/gridnova/main.py` implements all of them. If the paths change, update them in one place: `src/services/index.ts`.
 
 | Service function | Method & path | Returns |
 | --- | --- | --- |
@@ -160,7 +160,7 @@ If the backend is unreachable or returns an error, the UI shows a calm message (
 | `searchLocations(q)` | `GET /api/locations/search?q=` | places in India |
 | `getLocation()` / `setLocation(place)` | `GET` / `POST /api/location` | `CampusLocation` |
 
-Backend settings (environment variables): `CAMPUS_LAT`, `CAMPUS_LON`, `CAMPUS_NAME` and `CAMPUS_STATE` set the starting location (default Lucknow, Uttar Pradesh). It can also be changed at any time in Settings. `GRIDMIND_CLOCK=demo` starts in demo mode. `GRIDMIND_OFFLINE=1` skips the weather fetch.
+Backend settings (environment variables): `CAMPUS_LAT`, `CAMPUS_LON`, `CAMPUS_NAME` and `CAMPUS_STATE` set the starting location (default Lucknow, Uttar Pradesh). It can also be changed at any time in Settings. `GRIDNOVA_CLOCK=demo` starts in demo mode. `GRIDNOVA_OFFLINE=1` skips the weather fetch.
 
 **Never put API keys in the frontend.** Anything secret (LLM keys, weather API keys) belongs in the backend.
 

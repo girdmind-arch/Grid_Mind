@@ -44,7 +44,7 @@ interface OutcomeCardProps {
 }
 
 /**
- * After a scenario: GridMind vs no AI as a race, and how recovery improved run
+ * After a scenario: GridNova vs no AI as a race, and how recovery improved run
  * by run. Times are simulated minutes measured in the digital twin.
  */
 export function OutcomeCard({ type, runs, incidentId, className }: OutcomeCardProps) {
@@ -55,7 +55,7 @@ export function OutcomeCard({ type, runs, incidentId, className }: OutcomeCardPr
   const meta = SCENARIOS[type];
   const faster = last.baselineMin > 0 ? Math.round((1 - last.recoveryMin / last.baselineMin) * 100) : 0;
   const lanes = [
-    { key: "ai", name: "GridMind", min: last.recoveryMin, tone: "bg-success", icon: <BrainCircuit /> },
+    { key: "ai", name: "GridNova", min: last.recoveryMin, tone: "bg-success", icon: <BrainCircuit /> },
     { key: "none", name: "No AI (manual response)", min: last.baselineMin, tone: "bg-danger", icon: <Timer /> },
   ];
   const maxRun = Math.max(...runs.map((r) => r.baselineMin), 1);

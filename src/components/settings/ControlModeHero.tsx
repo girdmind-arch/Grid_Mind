@@ -9,7 +9,7 @@ import { cn } from "@/utils/cn";
 const ORDER: ControlMode[] = ["ai", "fallback", "manual"];
 
 const HEADLINE: Record<ControlMode, string> = {
-  ai: "GridMind agents are in control.",
+  ai: "GridNova agents are in control.",
   fallback: "Safe fallback rules are in control.",
   manual: "You are in manual control.",
 };

@@ -52,7 +52,7 @@ const TABS = [
     value: "app",
     label: "App",
     icon: Smartphone,
-    description: "Put GridMind on your home screen. It opens full screen and keeps working without a signal.",
+    description: "Put GridNova on your home screen. It opens full screen and keeps working without a signal.",
     content: <InstallApp />,
   },
   {
@@ -67,7 +67,7 @@ const TABS = [
 export default function Settings() {
   return (
     <>
-      <PageHeader title="Settings" description="Who is in control, what GridMind aims for, and how the app looks." />
+      <PageHeader title="Settings" description="Who is in control, what GridNova aims for, and how the app looks." />
 
       <ControlModeHero />
 

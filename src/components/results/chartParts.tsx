@@ -5,10 +5,10 @@ import { cn } from "@/utils/cn";
 // Shared pieces for the Results charts. Colors come from the chart tokens, so
 // both themes work without any per-theme code (SVG attributes accept var()).
 
-export type SeriesKey = "gridmind" | "baseline";
+export type SeriesKey = "gridnova" | "baseline";
 
 export const SERIES: { key: SeriesKey; name: string; color: string }[] = [
-  { key: "gridmind", name: "GridMind", color: "var(--chart-1)" },
+  { key: "gridnova", name: "GridNova", color: "var(--chart-1)" },
   { key: "baseline", name: "No-AI baseline", color: "var(--chart-2)" },
 ];
 
@@ -40,12 +40,12 @@ interface TooltipProps {
   payload?: readonly { dataKey?: unknown; value?: unknown }[];
 }
 
-/** Hover card for every chart: both values, plus how much less GridMind used. */
+/** Hover card for every chart: both values, plus how much less GridNova used. */
 export function makeTooltip(format: (n: number) => string, labelPrefix = "") {
   return function ChartTooltip({ active, payload, label }: TooltipProps) {
     if (!active || !payload?.length) return null;
     const value = (key: SeriesKey) => Number(payload.find((p) => p.dataKey === key)?.value ?? 0);
-    const gm = value("gridmind");
+    const gm = value("gridnova");
     const base = value("baseline");
     const less = base > 0 ? Math.round((1 - gm / base) * 100) : 0;
     return (
@@ -60,10 +60,10 @@ export function makeTooltip(format: (n: number) => string, labelPrefix = "") {
               <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: s.color }} />
               {s.name}
             </span>
-            <span className="font-mono font-semibold tabular text-fg">{format(s.key === "gridmind" ? gm : base)}</span>
+            <span className="font-mono font-semibold tabular text-fg">{format(s.key === "gridnova" ? gm : base)}</span>
           </p>
         ))}
-        {less > 0 && <p className="mt-1.5 border-t border-border pt-1.5 text-[13px] font-medium text-success">{less}% less with GridMind</p>}
+        {less > 0 && <p className="mt-1.5 border-t border-border pt-1.5 text-[13px] font-medium text-success">{less}% less with GridNova</p>}
       </div>
     );
   };
@@ -105,7 +105,7 @@ export function ChartTable({
                 <th scope="row" className="py-2 pr-3 text-left font-medium text-fg">
                   {r.label}
                 </th>
-                <td className="py-2 pl-3 text-right font-mono tabular text-fg">{format(r.gridmind)}</td>
+                <td className="py-2 pl-3 text-right font-mono tabular text-fg">{format(r.gridnova)}</td>
                 <td className="py-2 pl-3 text-right font-mono tabular text-fg-muted">{format(r.baseline)}</td>
               </tr>
             ))}

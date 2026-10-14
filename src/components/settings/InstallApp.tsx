@@ -59,13 +59,13 @@ export function InstallApp() {
         <p className="text-[15px] font-semibold text-success">Installed on this device.</p>
       ) : event ? (
         <Button variant="primary" onClick={install}>
-          <Download aria-hidden strokeWidth={1.75} /> Install GridMind
+          <Download aria-hidden strokeWidth={1.75} /> Install GridNova
         </Button>
       ) : isIos() ? (
         <p className="flex items-start gap-2 text-[15px] text-fg">
           <Share aria-hidden className="mt-0.5 size-[18px] shrink-0 text-accent" strokeWidth={1.75} />
           <span>
-            In Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>. GridMind opens full screen like an app.
+            In Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>. GridNova opens full screen like an app.
           </span>
         </p>
       ) : (

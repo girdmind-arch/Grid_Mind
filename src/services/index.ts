@@ -183,7 +183,7 @@ export async function getIncidentMemory(): Promise<IncidentMemory> {
   return MEMORY;
 }
 
-/** GridMind vs. no-AI baseline evaluation. */
+/** GridNova vs. no-AI baseline evaluation. */
 export async function getResults(): Promise<Results> {
   if (!USE_MOCKS) return request<Results>("/api/results");
   // MOCK: evaluation numbers from the simulated campus.

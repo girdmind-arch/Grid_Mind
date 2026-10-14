@@ -17,8 +17,8 @@ export const PALETTES = [
 
 export type PaletteId = (typeof PALETTES)[number]["id"];
 
-const STORAGE_KEY = "gridmind-palette";
-const EVENT = "gridmind-palette-change";
+const STORAGE_KEY = "gridnova-palette";
+const EVENT = "gridnova-palette-change";
 const isPalette = (v: unknown): v is PaletteId => PALETTES.some((p) => p.id === v);
 
 function read(): PaletteId {
