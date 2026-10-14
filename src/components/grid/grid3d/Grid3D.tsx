@@ -1,0 +1,51 @@
+import { useEffect, useRef } from "react";
+import type { GridState } from "@/types/grid";
+import { GridScene } from "./GridScene";
+
+/**
+ * React wrapper for the three.js campus grid. Creates the scene once, feeds it
+ * each new GridState, follows the theme, and only animates while on screen.
+ * Loaded lazily (three.js is large), see GridView.
+ */
+export default function Grid3D({ state, height }: { state: GridState; height: number }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<GridScene | null>(null);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const scene = new GridScene(host);
+    sceneRef.current = scene;
+
+    const ro = new ResizeObserver(([entry]) => scene.resize(entry.contentRect.width, entry.contentRect.height));
+    ro.observe(host);
+
+    // Animate only while visible and the tab is in front.
+    let onScreen = false;
+    const sync = () => (onScreen && !document.hidden ? scene.start() : scene.stop());
+    const io = new IntersectionObserver(([e]) => {
+      onScreen = e.isIntersecting;
+      sync();
+    });
+    io.observe(host);
+    document.addEventListener("visibilitychange", sync);
+
+    const mo = new MutationObserver(() => scene.applyPalette());
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-palette"] });
+
+    return () => {
+      ro.disconnect();
+      io.disconnect();
+      mo.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+      scene.dispose();
+      sceneRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    sceneRef.current?.update(state);
+  }, [state]);
+
+  return <div ref={hostRef} className="grid3d relative w-full overflow-hidden rounded-lg" style={{ height }} />;
+}

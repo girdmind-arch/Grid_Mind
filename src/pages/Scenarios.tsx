@@ -5,7 +5,8 @@ import { getGridState } from "@/services";
 import { useService } from "@/hooks/useService";
 import { useScenarioStore } from "@/store/scenarioStore";
 import { Badge, Card, ErrorState, IconTile, PageHeader, Skeleton } from "@/components/ui";
-import { GridDiagram, GridLegend } from "@/components/grid/GridDiagram";
+import { GridLegend } from "@/components/grid/GridDiagram";
+import { GridView } from "@/components/grid/GridView";
 import { AgentFeed } from "@/components/scenarios/AgentFeed";
 import { OutcomeCard } from "@/components/scenarios/OutcomeCard";
 import { ScenarioLauncher } from "@/components/scenarios/ScenarioLauncher";
@@ -70,7 +71,7 @@ export default function Scenarios() {
               {grid.status === "error" && !shownGrid ? (
                 <ErrorState message={grid.error} onRetry={grid.retry} />
               ) : shownGrid ? (
-                <GridDiagram state={shownGrid} />
+                <GridView state={shownGrid} />
               ) : (
                 <Skeleton className="h-[420px]" />
               )}

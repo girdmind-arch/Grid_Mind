@@ -325,3 +325,89 @@ html.theme-transition *::after {
   from { transform: translate3d(0, 0, 0) scale(1); }
   to { transform: translate3d(5vmax, -3vmax, 0) scale(1.1); }
 }
+
+/* ---------- 3D grid labels (src/components/grid/grid3d) ---------- */
+.grid3d-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 9px 5px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: color-mix(in oklab, var(--surface-solid) 82%, transparent);
+  box-shadow: var(--shadow-sm);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.15;
+  max-width: 116px;
+  text-align: center;
+  transform: translateY(-4px);
+  transition: border-color var(--dur-base) var(--ease-out);
+}
+.grid3d-label__name {
+  font-size: 12px;
+  font-weight: 650;
+  text-wrap: balance;
+}
+.grid3d-label__value,
+.grid3d-label__sub {
+  white-space: nowrap;
+}
+.grid3d-label__shield {
+  color: var(--success);
+  font-size: 9px;
+}
+.grid3d-label__value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.grid3d-label__sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.grid3d-label[data-tone="fault"] {
+  border-color: var(--danger);
+  box-shadow: var(--glow-danger);
+}
+.grid3d-label[data-tone="fault"] .grid3d-label__value,
+.grid3d-label[data-tone="fault"] .grid3d-label__sub {
+  color: var(--danger);
+}
+.grid3d-label[data-tone="reroute"] {
+  border-color: var(--ai);
+}
+.grid3d-label[data-tone="reroute"] .grid3d-label__sub {
+  color: var(--ai);
+  font-weight: 600;
+}
+.grid3d-label[data-tone="warning"] .grid3d-label__sub {
+  color: var(--warning);
+}
+.grid3d--narrow .grid3d-label {
+  padding: 3px 7px 4px;
+}
+.grid3d--narrow .grid3d-label__sub {
+  display: none;
+}
+.grid3d canvas {
+  cursor: grab;
+}
+.grid3d canvas:active {
+  cursor: grabbing;
+}
+.grid3d--compact .grid3d-label {
+  padding: 3px 7px 4px;
+  border-radius: 8px;
+}
+.grid3d--compact .grid3d-label__name,
+.grid3d--compact .grid3d-label__value {
+  font-size: 11px;
+}
+.grid3d--compact .grid3d-label__sub {
+  display: none;
+}
