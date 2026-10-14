@@ -1,4 +1,3 @@
-import { lazy } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/hooks/useTheme";
@@ -7,15 +6,10 @@ import { AppShell } from "@/components/layout/AppShell";
 import { GridBackdrop } from "@/components/layout/GridBackdrop";
 import Landing from "@/pages/Landing";
 import NotFound from "@/pages/NotFound";
+import { Agents, ControlRoom, Memory, Results, Scenarios, Settings } from "@/pages/loaders";
 
 // App pages load on demand, so the landing page opens fast and each page only
 // downloads its own code (charts, diagrams) when it is first visited.
-const ControlRoom = lazy(() => import("@/pages/ControlRoom"));
-const Agents = lazy(() => import("@/pages/Agents"));
-const Scenarios = lazy(() => import("@/pages/Scenarios"));
-const Memory = lazy(() => import("@/pages/Memory"));
-const Results = lazy(() => import("@/pages/Results"));
-const Settings = lazy(() => import("@/pages/Settings"));
 
 // Routes: "/" is the public website, "/app/*" is the Control Room app.
 const router = createBrowserRouter([
@@ -24,12 +18,12 @@ const router = createBrowserRouter([
     path: "/app",
     element: <AppShell />,
     children: [
-      { index: true, element: <ControlRoom /> },
-      { path: "agents", element: <Agents /> },
-      { path: "scenarios", element: <Scenarios /> },
-      { path: "memory", element: <Memory /> },
-      { path: "results", element: <Results /> },
-      { path: "settings", element: <Settings /> },
+      { index: true, element: <ControlRoom.Component /> },
+      { path: "agents", element: <Agents.Component /> },
+      { path: "scenarios", element: <Scenarios.Component /> },
+      { path: "memory", element: <Memory.Component /> },
+      { path: "results", element: <Results.Component /> },
+      { path: "settings", element: <Settings.Component /> },
     ],
   },
   { path: "*", element: <NotFound /> },
