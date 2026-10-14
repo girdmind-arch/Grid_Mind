@@ -1,7 +1,8 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useLocation, useOutlet } from "react-router";
 import { Skeleton } from "@/components/ui";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
+import { prefetchPages } from "@/pages/loaders";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
@@ -14,6 +15,8 @@ export function AppShell() {
   // while the new one waits (a plain <Outlet /> would swap instantly).
   const outlet = useOutlet();
   useLiveBackend();
+  // Download the other pages in the background so switching is instant.
+  useEffect(() => prefetchPages(), []);
 
   return (
     <div className="relative min-h-dvh">
@@ -31,17 +34,10 @@ export function AppShell() {
           tabIndex={-1}
           className="mx-auto max-w-[var(--content-max)] px-[var(--gutter)] pt-6 pb-[calc(var(--bottomnav-h)+env(safe-area-inset-bottom)+32px)] focus:outline-none sm:pt-8 lg:px-[var(--gutter-lg)] lg:pb-12 print:max-w-none print:p-0"
         >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, transition: { duration: 0.12 } }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Suspense fallback={<PageLoading />}>{outlet}</Suspense>
-            </motion.div>
-          </AnimatePresence>
+          {/* No exit animation: the new page swaps in at once and fades up quickly. */}
+          <motion.div key={pathname} initial={{ opacity: 0.4 }} animate={{ opacity: 1 }} transition={{ duration: 0.14, ease: "easeOut" }}>
+            <Suspense fallback={<PageLoading />}>{outlet}</Suspense>
+          </motion.div>
         </main>
       </div>
       <BottomNav />
