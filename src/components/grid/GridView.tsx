@@ -41,7 +41,7 @@ export function GridView({ state, className, compactToggle, large }: { state: Gr
   const narrow = useMediaQuery("(max-width: 639px)");
   const desktop = useMediaQuery("(min-width: 1024px)");
   // `large` is the Control Room's main view: taller, so buildings and labels have room.
-  const height = large ? (narrow ? 520 : desktop ? 680 : 560) : narrow ? 500 : 460;
+  const height = large ? (narrow ? 450 : desktop ? 600 : 520) : narrow ? 500 : 460;
 
   const choose = (v: View) => {
     setView(v);
