@@ -16,15 +16,33 @@ type State<T> =
  * Pass `deps` to reload when something changes. While reloading, the previous
  * data stays available so the screen does not flash back to skeletons.
  */
+// Last result per service function + deps, so revisiting a page shows its data at
+// once and refreshes it quietly in the background (no skeleton flash).
+const cache = new Map<unknown, Map<string, unknown>>();
+const keyOf = (deps: DependencyList) => {
+  try {
+    return JSON.stringify(deps);
+  } catch {
+    return "";
+  }
+};
+
 export function useService<T>(fn: () => Promise<T>, deps: DependencyList = []) {
-  const [state, setState] = useState<State<T>>({ status: "loading", data: undefined, error: null });
+  const [state, setState] = useState<State<T>>(() => {
+    const hit = cache.get(fn)?.get(keyOf(deps)) as T | undefined;
+    return hit !== undefined ? { status: "success", data: hit, error: null } : { status: "loading", data: undefined, error: null };
+  });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setState((s) => ({ status: "loading", data: s.data, error: null }));
     fn()
-      .then((data) => !cancelled && setState({ status: "success", data, error: null }))
+      .then((data) => {
+        if (!cache.has(fn)) cache.set(fn, new Map());
+        cache.get(fn)!.set(keyOf(deps), data);
+        if (!cancelled) setState({ status: "success", data, error: null });
+      })
       .catch((err: unknown) => {
         if (cancelled) return;
         const message =
