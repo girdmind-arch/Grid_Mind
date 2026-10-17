@@ -1,9 +1,10 @@
-import { Clock3, Lock, MapPin, Palette, Smartphone, Target } from "lucide-react";
+import { Clock3, Cpu, Lock, MapPin, Palette, Smartphone, Target } from "lucide-react";
 import { PageHeader, Tabs, TabsContent, TabsList, TabsTrigger, ThemeSwitcher } from "@/components/ui";
 import { ControlModeHero } from "@/components/settings/ControlModeHero";
 import { GoalPresets } from "@/components/settings/GoalPresets";
 import { SimulationClock } from "@/components/settings/SimulationClock";
 import { CampusLocationPicker } from "@/components/settings/CampusLocationPicker";
+import { HardwareDemo } from "@/components/settings/HardwareDemo";
 import { InstallApp } from "@/components/settings/InstallApp";
 import { ColourThemePicker } from "@/components/settings/ColourThemePicker";
 import { GuardrailRules } from "@/components/agents/GuardrailRules";
@@ -29,6 +30,13 @@ const TABS = [
     icon: Clock3,
     description: "Live follows real Indian time and today's weather. Demo evening starts at 17:20 and runs faster.",
     content: <SimulationClock />,
+  },
+  {
+    value: "hardware",
+    label: "Hardware",
+    icon: Cpu,
+    description: "Optional tabletop ESP32 demo. The campus stays simulated; the rig shows real low-voltage readings beside it.",
+    content: <HardwareDemo />,
   },
   {
     value: "appearance",
