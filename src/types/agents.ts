@@ -53,6 +53,8 @@ export interface Plan {
 
 export interface Decision {
   id: string;
+  /** Set on the answer to an approval when the tabletop rig was involved. */
+  hardware?: import("./hardware").HardwareDispatch;
   startedAt: ISODate;
   title: string;
   trigger: string;
