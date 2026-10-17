@@ -7,6 +7,7 @@ import { formatNumber } from "@/utils/format";
 import { cn } from "@/utils/cn";
 import { setSoundEnabled, soundEnabled } from "@/utils/sound";
 import { SCENARIOS } from "./scenarioMeta";
+import { RigStatus } from "./RigStatus";
 
 const mmss = (ms: number) => {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -96,6 +97,7 @@ export function ScenarioBanner({ className }: { className?: string }) {
                 ? `Stable again. Recovery took ${formatNumber(outcome.recoveryMin, 1)} min in the digital twin, vs ${formatNumber(outcome.baselineMin, 0)} min with no AI.`
                 : "Stable again. Every protected zone kept power.")}
           </p>
+          <div className="mt-1.5 empty:hidden"><RigStatus /></div>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
