@@ -6,6 +6,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { GridBackdrop } from "@/components/layout/GridBackdrop";
 import Landing from "@/pages/Landing";
 import NotFound from "@/pages/NotFound";
+import Login from "@/pages/Login";
+import { RequireAuth } from "@/components/layout/RequireAuth";
 import { Agents, ControlRoom, Memory, Results, Scenarios, Settings } from "@/pages/loaders";
 
 // App pages load on demand, so the landing page opens fast and each page only
@@ -14,16 +16,23 @@ import { Agents, ControlRoom, Memory, Results, Scenarios, Settings } from "@/pag
 // Routes: "/" is the public website, "/app/*" is the Control Room app.
 const router = createBrowserRouter([
   { path: "/", element: <Landing /> },
+  { path: "/login", element: <Login /> },
   {
-    path: "/app",
-    element: <AppShell />,
+    // Everything under /app needs a signed-in user (RequireAuth sends everyone else to /login).
+    element: <RequireAuth />,
     children: [
-      { index: true, element: <ControlRoom.Component /> },
-      { path: "agents", element: <Agents.Component /> },
-      { path: "scenarios", element: <Scenarios.Component /> },
-      { path: "memory", element: <Memory.Component /> },
-      { path: "results", element: <Results.Component /> },
-      { path: "settings", element: <Settings.Component /> },
+      {
+        path: "/app",
+        element: <AppShell />,
+        children: [
+          { index: true, element: <ControlRoom.Component /> },
+          { path: "agents", element: <Agents.Component /> },
+          { path: "scenarios", element: <Scenarios.Component /> },
+          { path: "memory", element: <Memory.Component /> },
+          { path: "results", element: <Results.Component /> },
+          { path: "settings", element: <Settings.Component /> },
+        ],
+      },
     ],
   },
   { path: "*", element: <NotFound /> },
