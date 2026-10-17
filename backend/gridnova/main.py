@@ -8,18 +8,22 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi import Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
+from . import auth
+from . import hardware as hw
 from . import campus as c
 from .agents import GUARDRAILS, Orchestrator
 from .evaluation import build_results, build_run_history
@@ -51,6 +55,7 @@ def _agent_loop():
             if grid.expire_mode(MODE_TTL_S):
                 logging.getLogger("gridnova.agents").info("control mode reset to AI after %.0f min", MODE_TTL_S / 60)
             orchestrator.tick()
+            hw.service.housekeeping()  # offline devices, expired commands, arming timeouts
         except Exception:  # keep the loop alive; the error is in the logs
             logging.getLogger("gridnova.agents").exception("agent tick failed")
 
@@ -70,6 +75,55 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------- Sign-in ----------
+OPEN_PATHS = {"/api/health", "/api/auth/login", "/api/auth/demo"}
+# The ESP32 signs in with its own device key (see hardware.py), not with a user account.
+DEVICE_PREFIX = "/api/hardware/device/"
+
+
+@app.middleware("http")
+async def require_sign_in(request: Request, call_next):
+    """Every /api call needs a signed-in user; changes (anything but GET) need an operator."""
+    path = request.url.path
+    if auth.enabled() and path.startswith("/api/") and path not in OPEN_PATHS and not path.startswith(DEVICE_PREFIX) and request.method != "OPTIONS":
+        user = auth.user_from_header(request.headers.get("authorization"))
+        if user is None:
+            return JSONResponse({"detail": "Please sign in."}, status_code=401)
+        if request.method != "GET" and user.role != "operator" and path != "/api/auth/me":
+            return JSONResponse({"detail": "This account is view-only."}, status_code=403)
+        request.state.user = user
+    return await call_next(request)
+
+
+class LoginBody(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=1, max_length=200)
+
+
+@app.post("/api/auth/login")
+def login(body: LoginBody, request: Request):
+    try:
+        user = auth.authenticate(body.username, body.password, request.client.host if request.client else "")
+    except PermissionError as e:
+        raise HTTPException(429, str(e))
+    if user is None:
+        raise HTTPException(401, "Wrong user name or password.")
+    token, exp = auth.issue(user)
+    return {"token": token, "expiresAt": exp, "user": {"name": user.name, "role": user.role}}
+
+
+@app.get("/api/auth/me")
+def me(request: Request):
+    user = getattr(request.state, "user", None)
+    return {"name": user.name, "role": user.role} if user else {"name": "operator", "role": "operator"}
+
+
+@app.get("/api/auth/demo")
+def demo_accounts():
+    """Demo accounts to show on the sign-in page (empty once real accounts are configured)."""
+    return {"accounts": auth.demo_accounts()}
+
 
 MODE_MESSAGES = {
     "ai": "Agents are planning and acting again, within the guardrails.",
@@ -134,6 +188,8 @@ def grid_state() -> dict:
             "mitigated": fault.mitigated,
         },
         "environment": grid.environment(),
+        # Always the simulator: tabletop readings are never mixed into these campus numbers.
+        "dataSource": "simulation",
     }
 
 
@@ -177,10 +233,45 @@ class LocationBody(BaseModel):
     lon: float = Field(ge=68, le=97.5)  # India's longitude range
 
 
+def _hardware_plan(type_: str, severity: int, incident_id: str) -> dict:
+    try:
+        return hw.service.plan_for_scenario(type_, severity, incident_id)
+    except Exception:
+        logging.getLogger("gridnova.hardware").exception("hardware plan failed; simulation only")
+        return {"dataSource": "simulation", "outcome": "simulated_only", "physicallyPerformed": False,
+                "reason": "The hardware service had a problem. Simulation only.", "commandIds": []}
+
+
+def _who(request: Request) -> str:
+    user = getattr(request.state, "user", None)
+    return user.name if user else "local operator"
+
+
+def _hw(call, *args):
+    try:
+        return call(*args)
+    except hw.HWError as e:
+        raise HTTPException(e.status, e.message)
+
+
+def _private_accounts_only() -> None:
+    """The demo operator account is printed on the sign-in page, so it must not be able to move a real rig."""
+    if auth.enabled() and auth.IS_DEMO and os.environ.get("GRIDNOVA_HW_ALLOW_DEMO_ACCOUNTS") != "1":
+        raise HTTPException(409, "Set GRIDNOVA_USERS first: the public demo accounts cannot control hardware.")
+
+
+class HardwareModeBody(BaseModel):
+    mode: Literal["simulation", "hardware-demo"]
+
+
+class ArmBody(BaseModel):
+    minutes: int = Field(hw.ARM_DEFAULT_MIN, ge=1, le=hw.ARM_MAX_MIN)
+
+
 # ---------- API ----------
 @app.get("/api/health")
 def health():
-    return {"ok": True, "simTime": iso(grid.now()), "weather": weather.status()}
+    return {"ok": True, "simTime": iso(grid.now()), "weather": weather.status(), "hardware": hw.service.summary()}
 
 
 @app.get("/api/grid/state")
@@ -198,12 +289,22 @@ def inject(req: FaultRequest):
     if req.targetZoneId and req.targetZoneId not in c.ZONE_BY_ID:
         raise HTTPException(400, "Unknown zone.")
     f = grid.start_fault(req.type, req.severity, req.durationMin, req.targetZoneId)
-    return {"incidentId": f.incident_id, "startedAt": iso(grid.at(f.started_hour)), "message": "Scenario started."}
+    return {
+        "incidentId": f.incident_id,
+        "startedAt": iso(grid.at(f.started_hour)),
+        "message": "Scenario started.",
+        # Whether the rig was (or will be) involved. The simulation ran either way.
+        "hardware": _hardware_plan(req.type, req.severity, f.incident_id),
+    }
 
 
 @app.post("/api/scenarios/clear")
 def clear():
     grid.clear_fault()
+    try:
+        hw.service.release_scenario()
+    except Exception:  # the simulation must never depend on the rig
+        logging.getLogger("gridnova.hardware").exception("could not release the hardware scenario")
     return JSONResponse(None)
 
 
@@ -217,9 +318,15 @@ def approval(decision_id: str, body: ApprovalBody):
     if body.decision == "modify" and body.optionId not in {"0.5", "0.6", "0.7"}:
         raise HTTPException(400, "Pick one of the offered options.")
     try:
-        return orchestrator.respond(decision_id, body.model_dump(exclude_none=True))
+        d = orchestrator.respond(decision_id, body.model_dump(exclude_none=True))
     except KeyError:
         raise HTTPException(404, "That decision is not waiting for approval.")
+    try:
+        rig = hw.service.on_approval(d.get("incidentId"), d["approval"]["status"])
+    except Exception:
+        logging.getLogger("gridnova.hardware").exception("hardware approval hand-off failed")
+        rig = None
+    return {**d, "hardware": rig} if rig else d
 
 
 @app.get("/api/agents/trace")
@@ -309,6 +416,86 @@ def set_sim(body: ClockBody):
 def set_mode(body: ModeBody):
     grid.set_mode(body.mode)
     return {"mode": body.mode, "changedAt": iso(grid.now()), "message": MODE_MESSAGES[body.mode]}
+
+
+# ---------- Hardware demo (operator side) ----------
+@app.get("/api/hardware/state")
+def hardware_state():
+    return hw.service.state()
+
+
+@app.get("/api/hardware/capabilities")
+def hardware_capabilities():
+    return hw.service.capabilities()
+
+
+@app.post("/api/hardware/mode")
+def hardware_mode(body: HardwareModeBody):
+    if body.mode == "hardware-demo":
+        _private_accounts_only()
+    return _hw(hw.service.set_mode, body.mode)
+
+
+@app.post("/api/hardware/arm")
+def hardware_arm(body: ArmBody, request: Request):
+    _private_accounts_only()
+    return _hw(hw.service.arm, body.minutes, _who(request))
+
+
+@app.post("/api/hardware/disarm")
+def hardware_disarm():
+    return hw.service.disarm()
+
+
+@app.post("/api/hardware/commands")
+def hardware_command(body: hw.CommandBody, request: Request):
+    if body.type == "select_source" and body.source is None:
+        raise HTTPException(422, "select_source needs a source.")
+    if body.type == "set_load" and (body.load is None or body.on is None):
+        raise HTTPException(422, "set_load needs a load and on/off.")
+    return _hw(hw.service.submit, body, _who(request))
+
+
+@app.post("/api/hardware/estop")
+def hardware_estop(request: Request):
+    return hw.service.emergency_stop(_who(request))
+
+
+@app.post("/api/hardware/estop/reset")
+def hardware_estop_reset(request: Request):
+    return _hw(hw.service.reset_estop, _who(request))
+
+
+# ---------- Hardware demo (device side: ESP32 polls us over outbound HTTPS) ----------
+def _device(request: Request, device_id: str | None, authorization: str | None) -> str:
+    client = request.client.host if request.client else ""
+    return _hw(hw.service.authenticate_device, device_id, authorization, client)
+
+
+@app.post("/api/hardware/device/telemetry")
+def device_telemetry(body: hw.Telemetry, request: Request, x_device_id: str | None = Header(None), authorization: str | None = Header(None)):
+    did = _device(request, x_device_id, authorization)
+    return _hw(hw.service.ingest_telemetry, body, did)
+
+
+@app.get("/api/hardware/device/commands")
+def device_commands(request: Request, x_device_id: str | None = Header(None), authorization: str | None = Header(None)):
+    did = _device(request, x_device_id, authorization)
+    return hw.service.fetch_commands(did)
+
+
+@app.get("/api/hardware/device/status")
+def device_status(request: Request, x_device_id: str | None = Header(None), authorization: str | None = Header(None)):
+    _device(request, x_device_id, authorization)
+    return hw.service.device_heartbeat()
+
+
+@app.post("/api/hardware/device/commands/{command_id}/ack")
+def device_ack(command_id: str, body: hw.Ack, request: Request, x_device_id: str | None = Header(None), authorization: str | None = Header(None)):
+    did = _device(request, x_device_id, authorization)
+    if not re.fullmatch(r"cmd-[0-9a-f]{12}", command_id):
+        raise HTTPException(422, "Malformed command id.")
+    return _hw(hw.service.ack, did, command_id, body)
 
 
 # ---------- Website ----------
