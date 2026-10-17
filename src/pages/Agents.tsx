@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Pause, Play } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
 import { setControlMode } from "@/services";
+import { VIEW_ONLY_MESSAGE, canActNow } from "@/store/authStore";
 import { toast } from "@/components/ui";
 import { useScenarioStore } from "@/store/scenarioStore";
 import { Badge, Button, Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
@@ -18,6 +19,7 @@ export default function Agents() {
   const setMode = useAppStore((s) => s.setMode);
   const busy = agents?.filter((a) => a.status !== "idle" && a.status !== "paused") ?? [];
   const resume = async () => {
+    if (!canActNow()) return void toast({ ...VIEW_ONLY_MESSAGE });
     try {
       const ack = await setControlMode("ai");
       setMode(ack.mode);
