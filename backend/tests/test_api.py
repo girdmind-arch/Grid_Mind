@@ -191,3 +191,49 @@ def test_manual_mode_expires_back_to_ai():
     g.set_mode("manual")
     now[0] += 10_000
     assert not g.expire_mode(0)  # ttl 0 = never expire
+
+
+def test_sign_in_roles_and_protection(monkeypatch):
+    from fastapi.testclient import TestClient
+    from gridnova import auth
+    from gridnova.main import app
+
+    monkeypatch.setenv("GRIDNOVA_AUTH", "on")
+    monkeypatch.setenv("GRIDNOVA_USERS", "asha:pw-op:operator,guest:pw-view:viewer")
+    auth.reload_users()
+    try:
+        c = TestClient(app)
+        assert c.get("/api/health").status_code == 200  # open
+        assert c.get("/api/grid/state").status_code == 401  # needs sign-in
+        assert c.post("/api/auth/login", json={"username": "asha", "password": "nope"}).status_code == 401
+        assert c.get("/api/auth/demo").json()["accounts"] == []  # real accounts: no demo hints
+
+        op = c.post("/api/auth/login", json={"username": "Asha", "password": "pw-op"}).json()
+        vw = c.post("/api/auth/login", json={"username": "guest", "password": "pw-view"}).json()
+        assert op["user"] == {"name": "asha", "role": "operator"}
+        h_op = {"Authorization": f"Bearer {op['token']}"}
+        h_vw = {"Authorization": f"Bearer {vw['token']}"}
+
+        assert c.get("/api/grid/state", headers=h_vw).status_code == 200  # viewers can look
+        assert c.post("/api/control/mode", json={"mode": "ai"}, headers=h_vw).status_code == 403  # not act
+        assert c.post("/api/control/mode", json={"mode": "ai"}, headers=h_op).status_code == 200
+        assert c.get("/api/auth/me", headers=h_vw).json()["role"] == "viewer"
+        assert c.get("/api/grid/state", headers={"Authorization": "Bearer " + op["token"][:-3] + "abc"}).status_code == 401
+    finally:
+        monkeypatch.undo()
+        auth.reload_users()
+
+
+def test_token_expiry_and_lockout():
+    from gridnova import auth
+
+    u = auth.User("x", "viewer")
+    t, exp = auth.issue(u, now=1000.0)
+    assert auth.verify(t, now=1001.0) == u and auth.verify(t, now=exp + 1) is None
+    for _ in range(auth.MAX_FAILS):
+        assert auth.authenticate("nobody", "bad", client="1.2.3.4", now=5000.0) is None
+    try:
+        auth.authenticate("nobody", "bad", client="1.2.3.4", now=5001.0)
+        raise AssertionError("expected lockout")
+    except PermissionError:
+        pass
