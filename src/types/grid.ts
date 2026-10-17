@@ -70,6 +70,8 @@ export interface CampusLocation {
 }
 
 export interface GridState {
+  /** Always "simulation": campus numbers never come from the tabletop rig. */
+  dataSource?: "simulation";
   timestamp: ISODate;
   mode: ControlMode;
   demandKw: number;
@@ -133,4 +135,6 @@ export interface FaultResult {
   incidentId: string;
   startedAt: ISODate;
   message: string;
+  /** Whether the tabletop rig was involved (backend only). Absent on demo data. */
+  hardware?: import("./hardware").HardwareDispatch;
 }
