@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import type { ControlMode } from "@/types/grid";
 import { setControlMode } from "@/services";
+import { VIEW_ONLY_MESSAGE, canActNow } from "@/store/authStore";
 import { useAppStore } from "@/store/appStore";
 import { Button, Card, MODE_INFO, Modal, toast } from "@/components/ui";
 import { cn } from "@/utils/cn";
@@ -30,6 +31,7 @@ export function ControlModeHero() {
   const name = useId();
 
   const apply = async (next: ControlMode) => {
+    if (!canActNow()) return void toast({ ...VIEW_ONLY_MESSAGE });
     setConfirmManual(false);
     setPending(next);
     try {
